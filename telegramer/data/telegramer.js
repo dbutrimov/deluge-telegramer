@@ -45,48 +45,38 @@ TelegramerPage = Ext.extend(Ext.Panel, {
 
     initComponent: function () {
         TelegramerPage.superclass.initComponent.call(this);
-        this.opts = new Deluge.OptionsManager();
 
         var fieldset = this.add({
             xtype: 'fieldset',
-            border: false,
             title: _('Bot Settings'),
+            border: false,
             autoHeight: true,
             labelAlign: 'top',
-            defaultType: 'textfield'
+            defaultType: 'textfield',
+            defaults: {
+                width: '97%'
+            }
         });
-        this.opts.bind(
-            'telegram_token',
-            fieldset.add({
-                fieldLabel: _('Telegram bot token'),
-                name: 'telegram_token',
-                width: '97%',
-                emptyText: 'Contact @BotFather and create a bot'
-            }));
-        this.opts.bind(
-            'telegram_user',
-            fieldset.add({
-                fieldLabel: _('Telegram user ID'),
-                name: 'telegram_user',
-                width: '97%',
-                emptyText: 'Contact @MyIDbot'
-            }));
-        this.opts.bind(
-            'telegram_users',
-            fieldset.add({
-                fieldLabel: _('Additional IDs'),
-                name: 'telegram_users',
-                width: '97%',
-                emptyText: 'IDs should be comma-separated'
-            }));
-        this.opts.bind(
-            'telegram_users_notify',
-            fieldset.add({
-                fieldLabel: _('Notify IDs'),
-                name: 'telegram_users_notify',
-                width: '97%',
-                emptyText: _('IDs should be comma-separated')
-            }));
+        this.telegram_token = fieldset.add({
+            name: 'telegram_token',
+            fieldLabel: _('Telegram bot token'),
+            emptyText: _('Contact @BotFather and create a bot')
+        });
+        this.telegram_user = fieldset.add({
+            name: 'telegram_user',
+            fieldLabel: _('Telegram user ID'),
+            emptyText: _('Contact @MyIDbot')
+        });
+        this.telegram_users = fieldset.add({
+            name: 'telegram_users',
+            fieldLabel: _('Additional IDs'),
+            emptyText: _('IDs should be comma-separated')
+        });
+        this.telegram_users_notify = fieldset.add({
+            name: 'telegram_users_notify',
+            fieldLabel: _('Notify IDs'),
+            emptyText: _('IDs should be comma-separated')
+        });
         this.buttons = fieldset.add({
             xtype: 'container',
             layout: 'hbox',
@@ -97,59 +87,52 @@ TelegramerPage = Ext.extend(Ext.Panel, {
             items: [{
                 xtype: 'button',
                 name: 'telegram_test',
-                text: 'Test',
+                text: _('Test')
             }, {
                 xtype: 'button',
                 name: 'telegram_reload',
-                text: 'Reload',
+                text: _('Reload')
             }]
         });
 
         fieldset = this.add({
             xtype: 'fieldset',
-            border: false,
             title: _('Notifications'),
+            border: false,
             autoHeight: true,
             labelAlign: 'top',
             defaultType: 'checkbox',
+            defaults: {
+                width: '97%',
+                height: 12,
+                hideLabel: true
+            }
         });
-        this.opts.bind(
-            'telegram_notify_added',
-            fieldset.add({
-                hideLabel: true,
-                boxLabel: _('Send Telegram notification when torrents are added'),
-                width: '97%',
-                height: 12,
-                name: 'telegram_notify_added',
-                id: 'telegram_notify_added'
-            }));
-        this.opts.bind(
-            'telegram_notify_finished',
-            fieldset.add({
-                hideLabel: true,
-                boxLabel: _('Send Telegram notification when torrents finish'),
-                width: '97%',
-                height: 12,
-                name: 'telegram_notify_finished',
-                id: 'telegram_notify_finished'
-            }));
+        this.telegram_notify_added = fieldset.add({
+            name: 'telegram_notify_added',
+            boxLabel: _('Send Telegram notification when torrents are added')
+        });
+        this.telegram_notify_finished = fieldset.add({
+            name: 'telegram_notify_finished',
+            boxLabel: _('Send Telegram notification when torrents finish')
+        });
 
         fieldset = this.add({
             xtype: 'fieldset',
-            border: false,
             title: _('Sorting'),
+            border: false,
             autoHeight: true,
             labelAlign: 'top',
             defaultType: 'textfield',
+            defaults: {
+                width: '94%'
+            },
             layout: {
                 type: 'table',
                 columns: 2,
                 tableAttrs: {
                     style: 'width: 100%; border-spacing: 6px;'
                 }
-            },
-            defaults: {
-                width: '94%'
             }
         });
         fieldset.add({
@@ -162,66 +145,42 @@ TelegramerPage = Ext.extend(Ext.Panel, {
             text: _('Directory'),
             style: 'display: inline-block; text-align: center;'
         });
-        this.opts.bind(
-            'cat1',
-            fieldset.add({
-                fieldLabel: _('Category 1'),
-                name: 'cat1',
-                id: 'cat1',
-                value: ''
-            }));
-        this.opts.bind(
-            'dir1',
-            fieldset.add({
-                fieldLabel: _('Directory 1'),
-                name: 'dir1',
-                id: 'dir1',
-                value: ''
-            }));
-        this.opts.bind(
-            'cat2',
-            fieldset.add({
-                fieldLabel: _('Category 2'),
-                name: 'cat2',
-                id: 'cat2',
-                value: ''
-            }));
-        this.opts.bind(
-            'dir2',
-            fieldset.add({
-                fieldLabel: _('Directory 2'),
-                name: 'dir2',
-                id: 'dir2',
-                value: ''
-            }));
-        this.opts.bind(
-            'cat3',
-            fieldset.add({
-                fieldLabel: _('Category 3'),
-                name: 'cat3',
-                id: 'cat3',
-                value: ''
-            }));
-        this.opts.bind(
-            'dir3',
-            fieldset.add({
-                fieldLabel: _('Directory 3'),
-                name: 'dir3',
-                id: 'dir3',
-                value: ''
-            }));
+        this.cat1 = fieldset.add({
+            name: 'cat1',
+            fieldLabel: _('Category 1')
+        });
+        this.dir1 = fieldset.add({
+            name: 'dir1',
+            fieldLabel: _('Directory 1')
+        });
+        this.cat2 = fieldset.add({
+            name: 'cat2',
+            fieldLabel: _('Category 2')
+        });
+        this.dir2 = fieldset.add({
+            name: 'dir2',
+            fieldLabel: _('Directory 2')
+        });
+        this.cat3 = fieldset.add({
+            name: 'cat3',
+            fieldLabel: _('Category 3')
+        });
+        this.dir3 = fieldset.add({
+            name: 'dir3',
+            fieldLabel: _('Directory 3')
+        });
 
-        this.buttons.getComponent(0).setHandler(this.teleTest, this);
-        this.buttons.getComponent(1).setHandler(this.teleReload, this);
-        deluge.preferences.on('show', this.onPreferencesShow, this);
+        this.buttons.getComponent(0).setHandler(this.onTestClick, this);
+        this.buttons.getComponent(1).setHandler(this.onReloadClick, this);
+
+        this.on('show', this.onPreferencesShow, this);
     },
 
-    teleTest: function () {
+    onTestClick: function () {
         this.onApply();
         deluge.client.telegramer.send_test_message();
     },
-
-    teleReload: function () {
+    onReloadClick: function () {
         this.onApply();
         deluge.client.telegramer.restart();
     },
@@ -229,94 +188,48 @@ TelegramerPage = Ext.extend(Ext.Panel, {
     onPreferencesShow: function () {
         deluge.client.telegramer.get_config({
             success: function (config) {
-                if (!Ext.isEmpty(config['telegram_token'])) {
-                    config['telegram_token'] = config['telegram_token'];
-                }
-                if (!Ext.isEmpty(config['telegram_user'])) {
-                    config['telegram_user'] = config['telegram_user'];
-                }
-                if (!Ext.isEmpty(config['telegram_users'])) {
-                    config['telegram_users'] = config['telegram_users'];
-                }
-                if (!Ext.isEmpty(config['telegram_users_notify'])) {
-                    config['telegram_users_notify'] = config['telegram_users_notify'];
-                }
-                if (!Ext.isEmpty(config['telegram_notify_added'])) {
-                    config['telegram_notify_added'] = config['telegram_notify_added'];
-                }
-                if (!Ext.isEmpty(config['telegram_notify_finished'])) {
-                    config['telegram_notify_finished'] = config['telegram_notify_finished'];
-                }
-                if (!Ext.isEmpty(config['cat1'])) {
-                    config['cat1'] = config['cat1'];
-                }
-                if (!Ext.isEmpty(config['cat2'])) {
-                    config['cat2'] = config['cat2'];
-                }
-                if (!Ext.isEmpty(config['cat3'])) {
-                    config['cat3'] = config['cat3'];
-                }
-                if (!Ext.isEmpty(config['dir1'])) {
-                    config['dir1'] = config['dir1'];
-                }
-                if (!Ext.isEmpty(config['dir2'])) {
-                    config['dir2'] = config['dir2'];
-                }
-                if (!Ext.isEmpty(config['dir3'])) {
-                    config['dir3'] = config['dir3'];
-                }
-                //Ext.getCmp("mycheck").checked;
-                this.opts.set(config);
+                this.telegram_token.setValue(config['telegram_token']);
+                this.telegram_user.setValue(config['telegram_user']);
+                this.telegram_users.setValue(config['telegram_users']);
+                this.telegram_users_notify.setValue(config['telegram_users_notify']);
+
+                this.telegram_notify_added.setValue(config['telegram_notify_added']);
+                this.telegram_notify_finished.setValue(config['telegram_notify_finished']);
+
+                this.cat1.setValue(config['cat1']);
+                this.dir1.setValue(config['dir1']);
+                this.cat2.setValue(config['cat2']);
+                this.dir2.setValue(config['dir2']);
+                this.cat3.setValue(config['cat3']);
+                this.dir3.setValue(config['dir3']);
             },
             scope: this,
         });
     },
-    onApply: function (e) {
-        var changed = this.opts.getDirty();
-        if (!Ext.isObjectEmpty(changed)) {
-            if (!Ext.isEmpty(changed['telegram_token'])) {
-                changed['telegram_token'] = changed['telegram_token'];
-            }
-            if (!Ext.isEmpty(changed['telegram_user'])) {
-                changed['telegram_user'] = changed['telegram_user'];
-            }
-            if (!Ext.isEmpty(changed['telegram_users'])) {
-                changed['telegram_users'] = changed['telegram_users'];
-            }
-            if (!Ext.isEmpty(changed['telegram_notify_added'])) {
-                changed['telegram_notify_added'] = changed['telegram_notify_added'];
-            }
-            if (!Ext.isEmpty(changed['telegram_notify_finished'])) {
-                changed['telegram_notify_finished'] = changed['telegram_notify_finished'];
-            }
-            if (!Ext.isEmpty(changed['cat1'])) {
-                changed['cat1'] = changed['cat1'];
-            }
-            if (!Ext.isEmpty(changed['cat2'])) {
-                changed['cat2'] = changed['cat2'];
-            }
-            if (!Ext.isEmpty(changed['cat3'])) {
-                changed['cat3'] = changed['cat3'];
-            }
-            if (!Ext.isEmpty(changed['dir1'])) {
-                changed['dir1'] = changed['dir1'];
-            }
-            if (!Ext.isEmpty(changed['dir2'])) {
-                changed['dir2'] = changed['dir2'];
-            }
-            if (!Ext.isEmpty(changed['dir3'])) {
-                changed['dir3'] = changed['dir3'];
-            }
 
-            deluge.client.telegramer.set_config(changed, {
-                success: this.onSetConfig,
-                scope: this,
-            });
-        }
+    onApply: function () {
+        var config = {};
+
+        config['telegram_token'] = this.telegram_token.getValue();
+        config['telegram_user'] = this.telegram_user.getValue();
+        config['telegram_users'] = this.telegram_users.getValue();
+
+        config['telegram_notify_added'] = this.telegram_notify_added.getValue();
+        config['telegram_notify_finished'] = this.telegram_notify_finished.getValue();
+
+        config['cat1'] = this.cat1.getValue();
+        config['dir1'] = this.dir1.getValue();
+        config['cat2'] = this.cat2.getValue();
+        config['dir2'] = this.dir2.getValue();
+        config['cat3'] = this.cat3.getValue();
+        config['dir3'] = this.dir3.getValue();
+
+        deluge.client.telegramer.set_config(config);
     },
-    onSetConfig: function () {
-        this.opts.commit();
-    },
+
+    onOk: function () {
+        this.onApply();
+    }
 });
 
 

@@ -76,7 +76,7 @@ HELP_MESSAGE = \
 
 MARKDOWN_PARSE_MODE = 'Markdown'
 
-CATEGORY, SET_LABEL, TORRENT_TYPE, ADD_MAGNET, ADD_TORRENT, ADD_URL = range(6)
+SET_CATEGORY, SET_LABEL, SET_TORRENT_TYPE, ADD_MAGNET, ADD_TORRENT, ADD_URL = range(6)
 
 DEFAULT_PREFS = {
     'telegram_token': '',
@@ -268,9 +268,9 @@ class Core(CorePluginBase):
             conv_handler = ConversationHandler(
                 entry_points=[CommandHandler('add', self.add)],
                 states={
-                    CATEGORY: [MessageHandler(Filters.text, self.category)],
+                    SET_CATEGORY: [MessageHandler(Filters.text, self.set_category)],
                     SET_LABEL: [MessageHandler(Filters.text, self.set_label)],
-                    TORRENT_TYPE: [MessageHandler(Filters.text, self.torrent_type)],
+                    SET_TORRENT_TYPE: [MessageHandler(Filters.text, self.set_torrent_type)],
                     ADD_MAGNET: [MessageHandler(Filters.text, self.add_magnet)],
                     ADD_TORRENT: [MessageHandler(Filters.document, self.add_torrent)],
                     ADD_URL: [MessageHandler(Filters.text, self.add_url)]
@@ -442,6 +442,7 @@ class Core(CorePluginBase):
         if not self.verify_user(bot, update):
             return
 
+        self.__conv_options = {}
         self.__torrent_options = {}
 
         try:
@@ -466,13 +467,11 @@ class Core(CorePluginBase):
                 '{0}\n{1}'.format(STRINGS['which_cat'], STRINGS['cancel']),
                 reply_markup=ReplyKeyboardMarkup(keyboard_options, one_time_keyboard=True))
 
-            return CATEGORY
-
+            return SET_CATEGORY
         except Exception as e:
             log.error(e)
-            # TODO: send reply
 
-    def category(self, bot, update):
+    def set_category(self, bot, update):
         if not self.verify_user(bot, update):
             return
 
@@ -520,7 +519,6 @@ class Core(CorePluginBase):
                 reply_markup=ReplyKeyboardMarkup(keyboard_options, one_time_keyboard=True))
 
             return SET_LABEL
-
         except Exception as e:
             log.error(e)
 
@@ -541,11 +539,11 @@ class Core(CorePluginBase):
             update.message.reply_text(
                 STRINGS['what_kind'],
                 reply_markup=ReplyKeyboardMarkup(keyboard_options, one_time_keyboard=True))
-            return TORRENT_TYPE
+            return SET_TORRENT_TYPE
         except Exception as e:
             log.error(e)
 
-    def torrent_type(self, bot, update):
+    def set_torrent_type(self, bot, update):
         if not self.verify_user(bot, update):
             return
 
@@ -566,7 +564,6 @@ class Core(CorePluginBase):
 
             update.message.reply_text(STRINGS['error'], reply_markup=ReplyKeyboardRemove())
             return ConversationHandler.END
-
         except Exception as e:
             log.error(e)
 
@@ -597,6 +594,7 @@ class Core(CorePluginBase):
             return ConversationHandler.END
         except Exception as e:
             log.error(e)
+            update.message.reply_text(STRINGS['download_fail'], reply_markup=ReplyKeyboardRemove())
 
     def add_torrent(self, bot, update):
         if not self.verify_user(bot, update):
@@ -661,8 +659,8 @@ class Core(CorePluginBase):
 
             return ConversationHandler.END
         except Exception as e:
-            update.message.reply_text(STRINGS['download_fail'], reply_markup=ReplyKeyboardRemove())
             log.error(e)
+            update.message.reply_text(STRINGS['download_fail'], reply_markup=ReplyKeyboardRemove())
 
     def apply_label(self, torrent_id, options):
         if not options or not isinstance(options, dict):
@@ -751,6 +749,10 @@ class Core(CorePluginBase):
 
     def on_torrent_event(self, torrent_id, event, *arg):
         if event == 'added':
+            if arg[0]:
+                # No futher action as from_state (arg[0]) is True
+                return
+
             self.on_torrent_added(torrent_id)
             return
 
