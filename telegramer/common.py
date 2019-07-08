@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # common.py
 #
@@ -37,8 +38,12 @@
 #    statement from all source files in the program, then also delete it here.
 #
 
+from __future__ import unicode_literals
+
+import os.path
+
+from pkg_resources import resource_filename
+
 
 def get_resource(filename):
-    import pkg_resources
-    import os
-    return pkg_resources.resource_filename("telegramer", os.path.join("data", filename))
+    return resource_filename(__package__, os.path.join('data', filename))

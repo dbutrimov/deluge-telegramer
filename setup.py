@@ -43,6 +43,7 @@
 #
 
 from setuptools import setup, find_packages
+
 __plugin_name__ = "Telegramer"
 __author__ = "Noam"
 __author_email__ = "noamgit@gmail.com"
@@ -55,7 +56,27 @@ Send notifications, add and view torrents on Deluge
 using Telegram messenger
 """
 __pkg_data__ = {__plugin_name__.lower(): ["data/*"]}
-packages = find_packages()
+# packages = find_packages()
+
+REQUIREMENTS_PACKAGES = [
+    # 'future',
+    # 'certifi',
+    # 'tornado',
+    # 'cryptography',
+    # 'asn1crypto',
+    # 'pycparser',
+    # 'cffi',
+    # 'telegram'
+]
+
+REQUIREMENTS_MODULES = [
+    # 'future',
+    # 'certifi',
+    # 'asn1crypto',
+    # 'pycparser',
+    # 'cffi',
+    # 'cryptography'
+]
 
 setup(
     name=__plugin_name__,
@@ -66,16 +87,19 @@ setup(
     url=__url__,
     license=__license__,
     long_description=__long_description__ if __long_description__ else __description__,
-    packages=packages,
+
+    # install_requires=REQUIREMENTS_PACKAGES,
+    # packages=packages,
+    packages=[__plugin_name__.lower()] + ['%s.%s' % (x, y) for x in REQUIREMENTS_PACKAGES for y in find_packages(x)] + REQUIREMENTS_PACKAGES,
+    py_modules=REQUIREMENTS_MODULES,
     package_data=__pkg_data__,
+
     entry_points="""
     [deluge.plugin.core]
     %s = %s:CorePlugin
-    [deluge.plugin.gtkui]
-    %s = %s:GtkUIPlugin
+    [deluge.plugin.gtk3ui]
+    %s = %s:Gtk3UIPlugin
     [deluge.plugin.web]
     %s = %s:WebUIPlugin
-    [telegramer.libpaths]
-    include = telegramer.include
-    """ % ((__plugin_name__, __plugin_name__.lower())*3)
+    """ % ((__plugin_name__, __plugin_name__.lower()) * 3)
 )
