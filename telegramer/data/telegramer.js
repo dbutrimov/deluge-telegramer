@@ -46,7 +46,7 @@ TelegramerPage = Ext.extend(Ext.Panel, {
     initComponent: function () {
         TelegramerPage.superclass.initComponent.call(this);
 
-        var fieldset = this.add({
+        let fieldset = this.add({
             xtype: 'fieldset',
             title: _('Bot Settings'),
             border: false,
@@ -208,7 +208,7 @@ TelegramerPage = Ext.extend(Ext.Panel, {
     },
 
     onApply: function () {
-        var config = {};
+        let config = {};
 
         config['telegram_token'] = this.telegram_token.getValue();
         config['telegram_user'] = this.telegram_user.getValue();
