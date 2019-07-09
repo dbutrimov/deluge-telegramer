@@ -59,14 +59,7 @@ __pkg_data__ = {__plugin_name__.lower(): ["data/*"]}
 # packages = find_packages()
 
 REQUIREMENTS_PACKAGES = [
-    # 'future',
-    # 'certifi',
-    # 'tornado',
-    # 'cryptography',
-    # 'asn1crypto',
-    # 'pycparser',
-    # 'cffi',
-    # 'telegram'
+    'telegram'
 ]
 
 REQUIREMENTS_MODULES = [
@@ -75,7 +68,10 @@ REQUIREMENTS_MODULES = [
     # 'asn1crypto',
     # 'pycparser',
     # 'cffi',
-    # 'cryptography'
+    # 'cryptography',
+    # 'urllib3',
+    # 'requests',
+    # 'telegram'
 ]
 
 setup(

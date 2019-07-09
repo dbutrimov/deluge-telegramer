@@ -6,7 +6,17 @@ then
   PYTHON_VERSION="3.6"
 fi
 
-PYTHON_MODULES=(future certifi asn1crypto pycparser cffi cryptography telegram)
+LINK_MODULES=(
+  future
+  certifi
+  asn1crypto
+  pycparser
+  cffi
+  cryptography
+  urllib3
+  requests
+  telegram
+)
 
 rm -rf ./.env
 
@@ -20,7 +30,7 @@ fi
 .env/bin/pip install -U pip
 .env/bin/pip install -U python-telegram-bot
 
-for i in ${PYTHON_MODULES[@]}
+for i in ${LINK_MODULES[@]}
 do
   ln -s .env/lib/python${PYTHON_VERSION}/site-packages/${i} .
 done
@@ -28,7 +38,7 @@ done
 .env/bin/python setup.py clean --all
 .env/bin/python setup.py bdist_egg
 
-for i in ${PYTHON_MODULES[@]}
+for i in ${LINK_MODULES[@]}
 do
   rm -rf ./${i}
 done
