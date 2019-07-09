@@ -48,7 +48,7 @@ from __future__ import unicode_literals
 import os
 import logging
 
-import requests
+import urllib3
 
 from deluge.core.eventmanager import EventManager
 from deluge.core.torrentmanager import TorrentManager
@@ -64,6 +64,7 @@ from deluge.plugins.pluginbase import CorePluginBase
 from deluge.common import fsize, fpcnt, fspeed, fpeer, ftime, fdate, is_url, is_magnet
 
 log = logging.getLogger(__name__)
+http = urllib3.PoolManager()
 
 HELP_MESSAGE = \
     '/add - Add a new torrent\n' \
@@ -614,9 +615,8 @@ class Core(CorePluginBase):
             file_info = bot.get_file(document.file_id)
 
             # Download file
-            response = requests.get(file_info.file_path, headers=HEADERS)
-            response.raise_for_status()
-            file_contents = response.content
+            response = http.request('GET', file_info.file_path, headers=HEADERS)
+            file_contents = response.data
 
             # Base64 encode file data
             meta_info = b64encode(file_contents)
@@ -645,9 +645,8 @@ class Core(CorePluginBase):
 
         try:
             # Download file
-            response = requests.get(url, headers=HEADERS)
-            response.raise_for_status()
-            file_contents = response.content
+            response = http.request('GET', url, headers=HEADERS)
+            file_contents = response.data
 
             # Base64 encode file data
             meta_info = b64encode(file_contents)

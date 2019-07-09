@@ -14,7 +14,6 @@ LINK_MODULES=(
   cffi
   cryptography
   urllib3
-  requests
   telegram
 )
 
