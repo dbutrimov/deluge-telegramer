@@ -55,6 +55,7 @@ from deluge.core.torrentmanager import TorrentManager
 from deluge.core.core import Core as DelugeCore
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
+from telegram.utils.request import Request
 from base64 import b64encode
 from random import choice
 import deluge.configmanager
@@ -260,7 +261,7 @@ class Core(CorePluginBase):
                     self.__notifylist = list(set(self.__notifylist + telegram_user_list_notify))
                     log.debug('Notify: ' + str(self.__notifylist))
 
-            self.__bot = Bot(telegram_token)
+            self.__bot = Bot(telegram_token, request=Request(con_pool_size=8))
             # Create the EventHandler and pass it bot's token.
             self.__updater = Updater(bot=self.__bot)
             # Get the dispatcher to register handlers
