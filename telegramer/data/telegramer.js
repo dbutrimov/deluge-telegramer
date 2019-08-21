@@ -77,7 +77,7 @@ TelegramerPage = Ext.extend(Ext.Panel, {
             fieldLabel: _('Notify IDs'),
             emptyText: _('IDs should be comma-separated')
         });
-        this.buttons = fieldset.add({
+        fieldset.add({
             xtype: 'container',
             layout: 'hbox',
             defaults: {
@@ -87,11 +87,15 @@ TelegramerPage = Ext.extend(Ext.Panel, {
             items: [{
                 xtype: 'button',
                 name: 'telegram_test',
-                text: _('Test')
+                text: _('Test'),
+                scope: this,
+                handler: this.onTestClick
             }, {
                 xtype: 'button',
                 name: 'telegram_reload',
-                text: _('Reload')
+                text: _('Reload'),
+                scope: this,
+                handler: this.onReloadClick
             }]
         });
 
@@ -169,9 +173,6 @@ TelegramerPage = Ext.extend(Ext.Panel, {
             name: 'dir3',
             fieldLabel: _('Directory 3')
         });
-
-        this.buttons.getComponent(0).setHandler(this.onTestClick, this);
-        this.buttons.getComponent(1).setHandler(this.onReloadClick, this);
 
         this.on('show', this.onPreferencesShow, this);
     },
