@@ -59,9 +59,9 @@ __pkg_data__ = {__plugin_name__.lower(): ["data/*"]}
 # packages = find_packages()
 
 REQUIREMENTS_PACKAGES = [
-    # 'future',
+    'future',
     # 'certifi',
-    # 'telegram'
+    'telegram'
 ]
 
 REQUIREMENTS_MODULES = [

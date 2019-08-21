@@ -262,7 +262,7 @@ class Core(CorePluginBase):
 
             self.__bot = Bot(telegram_token)
             # Create the EventHandler and pass it bot's token.
-            self.__updater = Updater(telegram_token)
+            self.__updater = Updater(bot=self.__bot)
             # Get the dispatcher to register handlers
             dp = self.__updater.dispatcher
             # Add conversation handler with the different states
@@ -804,5 +804,5 @@ class Core(CorePluginBase):
     def send_test_message(self):
         """Sends Telegram test message"""
         log.info('Send test')
-        self.__bot.sendSticker(self.__config['telegram_user'], choice(list(STICKERS.values())))
+        self.__bot.send_sticker(self.__config['telegram_user'], choice(list(STICKERS.values())))
         self.send_message(STRINGS['test_success'])
