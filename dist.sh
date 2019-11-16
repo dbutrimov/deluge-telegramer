@@ -14,6 +14,7 @@ LINK_MODULES=(
   cffi
   cryptography
   urllib3
+  tornado
   telegram
 )
 
