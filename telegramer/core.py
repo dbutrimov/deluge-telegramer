@@ -165,8 +165,8 @@ INFO_DICT = (
 INFOS = [i[0] for i in INFO_DICT]
 
 EVENT_MAP = {
-    'complete': 'TorrentFinishedEvent',
-    'added': 'TorrentAddedEvent'
+    'added': 'TorrentAddedEvent',
+    'complete': 'TorrentFinishedEvent'
 }
 
 
@@ -667,10 +667,12 @@ class Core(CorePluginBase):
             return
 
         label = options.get('label')
-        if not label or label == STRINGS['no_label']:
+        if not label:
             return
 
         label = label.lower()
+        if label == STRINGS['no_label'].lower():
+            return
 
         try:
             # Enable Label plugin
@@ -750,7 +752,7 @@ class Core(CorePluginBase):
     def on_torrent_event(self, torrent_id, event, *arg):
         if event == 'added':
             if arg[0]:
-                # No futher action as from_state (arg[0]) is True
+                # No further action as from_state (arg[0]) is True
                 return
 
             self.on_torrent_added(torrent_id)
