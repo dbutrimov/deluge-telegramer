@@ -63,6 +63,7 @@ import deluge.component as component
 from deluge.core.rpcserver import export
 from deluge.plugins.pluginbase import CorePluginBase
 from deluge.common import fsize, fpcnt, fspeed, fpeer, ftime, fdate, is_url, is_magnet
+from .common import is_int
 
 log = logging.getLogger(__name__)
 http = urllib3.PoolManager()
@@ -168,15 +169,6 @@ EVENT_MAP = {
     'added': 'TorrentAddedEvent',
     'complete': 'TorrentFinishedEvent'
 }
-
-
-def is_int(s):
-    try:
-        int(s)
-    except ValueError:
-        return False
-
-    return True
 
 
 def format_torrent_info(torrent):
@@ -622,8 +614,7 @@ class Core(CorePluginBase):
             # Base64 encode file data
             meta_info = b64encode(file_contents)
             log.info('Adding torrent from base64 string using options `{0}` ...'.format(self.__torrent_options))
-            torrent_id = self.__core.add_torrent_file(None, meta_info,
-                                                      self.__torrent_options or {})  # TODO: pass file name
+            torrent_id = self.__core.add_torrent_file('', meta_info, self.__torrent_options or {})
             self.apply_label(torrent_id, self.__conv_options)
             self.__conv_options = None
 
@@ -652,8 +643,7 @@ class Core(CorePluginBase):
             # Base64 encode file data
             meta_info = b64encode(file_contents)
             log.info('Adding torrent from base64 string using options `%s` ...', self.__torrent_options)
-            torrent_id = self.__core.add_torrent_file(None, meta_info,
-                                                      self.__torrent_options or {})  # TODO: pass file name
+            torrent_id = self.__core.add_torrent_file('', meta_info, self.__torrent_options or {})
             self.apply_label(torrent_id, self.__conv_options)
             self.__conv_options = None
 

@@ -14,7 +14,6 @@ LINK_MODULES=(
   cffi
   cryptography
   urllib3
-  tornado
   telegram
 )
 
@@ -28,7 +27,7 @@ else
 fi
 
 .env/bin/pip install -U pip
-.env/bin/pip install -U python-telegram-bot
+.env/bin/pip install -U python-telegram-bot==11.1.0
 
 for i in ${LINK_MODULES[@]}
 do

@@ -44,7 +44,6 @@ from __future__ import unicode_literals
 import logging
 
 from gi.repository import Gtk
-import deluge.common
 from .common import get_resource
 from deluge.ui.client import client
 import deluge.component as component
@@ -54,6 +53,10 @@ log = logging.getLogger(__name__)
 
 
 class Gtk3UI(Gtk3PluginBase):
+    def __init__(self, plugin_name):
+        super().__init__(plugin_name)
+        self.builder = None
+
     def enable(self):
         self.builder = Gtk.Builder.new_from_file(get_resource("config.ui"))
 
@@ -107,11 +110,11 @@ class Gtk3UI(Gtk3PluginBase):
         self.builder.get_object("cat3").set_text(config["cat3"])
         self.builder.get_object("dir3").set_text(config["dir3"])
 
-    def on_button_test_clicked(self, Event=None):
+    def on_button_test_clicked(self, event=None):
         client.telegramer.send_test_message()
 
-    def on_button_save_clicked(self, Event=None):
+    def on_button_save_clicked(self, event=None):
         self.on_apply_prefs()
 
-    def on_button_reload_clicked(self, Event=None):
+    def on_button_reload_clicked(self, event=None):
         client.telegramer.restart()
