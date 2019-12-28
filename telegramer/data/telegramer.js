@@ -37,18 +37,21 @@ Copyright:
     statement from all source files in the program, then also delete it here.
 */
 
-TelegramerPage = Ext.extend(Ext.Panel, {
+TelegramerPage = Ext.extend(Ext.TabPanel, {
     title: _("Telegramer"),
-    // header: false,
+    header: false,
     autoHeight: true,
     border: false,
+    activeTab: 0,
 
     initComponent: function () {
         TelegramerPage.superclass.initComponent.call(this);
 
-        let fieldset = this.add({
-            xtype: 'fieldset',
+        let panel = this.add({
             title: _('Bot Settings'),
+        });
+        let fieldset = panel.add({
+            xtype: 'fieldset',
             border: false,
             autoHeight: true,
             labelAlign: 'top',
@@ -99,9 +102,11 @@ TelegramerPage = Ext.extend(Ext.Panel, {
             }]
         });
 
-        fieldset = this.add({
-            xtype: 'fieldset',
+        panel = this.add({
             title: _('Notifications'),
+        });
+        fieldset = panel.add({
+            xtype: 'fieldset',
             border: false,
             autoHeight: true,
             labelAlign: 'top',
@@ -121,9 +126,11 @@ TelegramerPage = Ext.extend(Ext.Panel, {
             boxLabel: _('Send Telegram notification when torrents finish')
         });
 
-        fieldset = this.add({
-            xtype: 'fieldset',
+        panel = this.add({
             title: _('Sorting'),
+        });
+        fieldset = panel.add({
+            xtype: 'fieldset',
             border: false,
             autoHeight: true,
             labelAlign: 'top',
@@ -141,13 +148,11 @@ TelegramerPage = Ext.extend(Ext.Panel, {
         });
         fieldset.add({
             xtype: 'label',
-            text: _('Category'),
-            style: 'display: inline-block; text-align: center;'
+            text: _('Category')
         });
         fieldset.add({
             xtype: 'label',
-            text: _('Directory'),
-            style: 'display: inline-block; text-align: center;'
+            text: _('Directory')
         });
         this.cat1 = fieldset.add({
             name: 'cat1',

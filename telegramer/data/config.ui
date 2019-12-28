@@ -2,351 +2,207 @@
 <interface>
   <requires lib="gtk+" version="3.10" />
   <object class="GtkWindow" id="telegramer">
-    <property name="can_focus">True</property>
     <property name="title" translatable="yes">Telegramer</property>
+
     <child>
-      <object class="GtkGrid" id="prefs_box">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="margin_left">10</property>
-        <property name="margin_right">10</property>
-        <property name="margin_top">10</property>
-        <property name="margin_bottom">10</property>
-        <property name="row_spacing">5</property>
-        <property name="column_spacing">5</property>
-        <property name="column_homogeneous">True</property>
+      <object class="GtkNotebook" id="prefs_box">
         <child>
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
+          <object class="GtkBox">
+            <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
+            <property name="spacing">5</property>
             <property name="margin_top">10</property>
             <property name="margin_bottom">10</property>
-            <property name="label" translatable="yes">&lt;b&gt;Bot Settings&lt;/b&gt;</property>
-            <property name="use_markup">True</property>
-            <property name="xalign">0</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">0</property>
-            <property name="width">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Telegram Bot Token:</property>
-            <property name="xalign">0</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="telegram_token">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="primary_icon_activatable">False</property>
-            <property name="secondary_icon_activatable">False</property>
-            <property name="placeholder_text" translatable="yes">Contact @BotFather and create a new bot</property>
-          </object>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="top_attach">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Telegram User ID:</property>
-            <property name="xalign">0</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="telegram_user">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="primary_icon_activatable">False</property>
-            <property name="secondary_icon_activatable">False</property>
-            <property name="placeholder_text" translatable="yes">Contact @MyIDbot</property>
-          </object>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="top_attach">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Additional IDs:</property>
-            <property name="xalign">0</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">3</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="telegram_users">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="primary_icon_activatable">False</property>
-            <property name="secondary_icon_activatable">False</property>
-            <property name="placeholder_text" translatable="yes">IDs should be comma-separated</property>
-          </object>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="top_attach">3</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Notify IDs:</property>
-            <property name="xalign">0</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">4</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="telegram_users_notify">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="primary_icon_activatable">False</property>
-            <property name="secondary_icon_activatable">False</property>
-            <property name="placeholder_text" translatable="yes">IDs should be comma-separated</property>
-          </object>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="top_attach">4</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_top">10</property>
-            <property name="margin_bottom">10</property>
-            <property name="label" translatable="yes">&lt;b&gt;Notifications&lt;/b&gt;</property>
-            <property name="use_markup">True</property>
-            <property name="xalign">0</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">5</property>
-            <property name="width">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkCheckButton" id="telegram_notify_added">
-            <property name="label" translatable="yes">Send Telegram notification when torrents are added</property>
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">False</property>
-            <property name="active">True</property>
-            <property name="draw_indicator">True</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">6</property>
-            <property name="width">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkCheckButton" id="telegram_notify_finished">
-            <property name="label" translatable="yes">Send Telegram notification when torrents finish</property>
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="receives_default">False</property>
-            <property name="active">True</property>
-            <property name="draw_indicator">True</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">7</property>
-            <property name="width">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_top">10</property>
-            <property name="margin_bottom">10</property>
-            <property name="label" translatable="yes">&lt;b&gt;Sorting&lt;/b&gt;</property>
-            <property name="use_markup">True</property>
-            <property name="xalign">0</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">8</property>
-            <property name="width">2</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Category</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">9</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkLabel">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Directory</property>
-          </object>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="top_attach">9</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="cat1">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="primary_icon_activatable">False</property>
-            <property name="secondary_icon_activatable">False</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">10</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="dir1">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="primary_icon_activatable">False</property>
-            <property name="secondary_icon_activatable">False</property>
-          </object>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="top_attach">10</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="cat2">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="primary_icon_activatable">False</property>
-            <property name="secondary_icon_activatable">False</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">11</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="dir2">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="primary_icon_activatable">False</property>
-            <property name="secondary_icon_activatable">False</property>
-          </object>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="top_attach">11</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="cat3">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="primary_icon_activatable">False</property>
-            <property name="secondary_icon_activatable">False</property>
-          </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">12</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="dir3">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="primary_icon_activatable">False</property>
-            <property name="secondary_icon_activatable">False</property>
-          </object>
-          <packing>
-            <property name="left_attach">1</property>
-            <property name="top_attach">12</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButtonBox">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_top">10</property>
-            <property name="margin_bottom">10</property>
-            <property name="spacing">12</property>
-            <property name="homogeneous">True</property>
-            <property name="layout_style">center</property>
+            <property name="margin_left">10</property>
+            <property name="margin_right">10</property>
+
             <child>
-              <object class="GtkButton" id="button_save">
-                <property name="label" translatable="yes">Save</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <signal name="clicked" handler="on_button_save_clicked" swapped="no" />
+              <object class="GtkLabel">
+                <property name="label" translatable="yes">Telegram Bot Token:</property>
+                <property name="xalign">0</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkEntry" id="telegram_token">
+                <property name="placeholder_text" translatable="yes">Contact @BotFather and create a new bot</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="label" translatable="yes">Telegram User ID:</property>
+                <property name="xalign">0</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkEntry" id="telegram_user">
+                <property name="placeholder_text" translatable="yes">Contact @MyIDbot</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="label" translatable="yes">Additional IDs:</property>
+                <property name="xalign">0</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkEntry" id="telegram_users">
+                <property name="placeholder_text" translatable="yes">IDs should be comma-separated</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="label" translatable="yes">Notify IDs:</property>
+                <property name="xalign">0</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkEntry" id="telegram_users_notify">
+                <property name="placeholder_text" translatable="yes">IDs should be comma-separated</property>
+              </object>
+            </child>
+
+            <child>
+              <object class="GtkButtonBox">
+                <property name="homogeneous">True</property>
+                <property name="spacing">5</property>
+                <property name="margin_top">10</property>
+                <property name="margin_bottom">10</property>
+                <property name="layout_style">start</property>
+
+                <child>
+                  <object class="GtkButton" id="button_save">
+                    <property name="label" translatable="yes">Save</property>
+                    <signal name="clicked" handler="on_button_save_clicked" swapped="no" />
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="button_test">
+                    <property name="label" translatable="yes">Test</property>
+                    <signal name="clicked" handler="on_button_test_clicked" swapped="no" />
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkButton" id="button_reload">
+                    <property name="label" translatable="yes">Reload</property>
+                    <signal name="clicked" handler="on_button_reload_clicked" swapped="no" />
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel">
+            <property name="label" translatable="yes">Bot Settings</property>
+          </object>
+        </child>
+
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
+            <property name="spacing">5</property>
+            <property name="margin_top">10</property>
+            <property name="margin_bottom">10</property>
+            <property name="margin_left">10</property>
+            <property name="margin_right">10</property>
+
+            <child>
+              <object class="GtkCheckButton" id="telegram_notify_added">
+                <property name="label" translatable="yes">Send Telegram notification when torrents are added</property>
+                <property name="draw_indicator">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="telegram_notify_finished">
+                <property name="label" translatable="yes">Send Telegram notification when torrents finish</property>
+                <property name="draw_indicator">True</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel">
+            <property name="label" translatable="yes">Notifications</property>
+          </object>
+        </child>
+
+        <child>
+          <object class="GtkGrid">
+            <property name="row_spacing">5</property>
+            <property name="column_spacing">5</property>
+            <property name="margin_top">10</property>
+            <property name="margin_bottom">10</property>
+            <property name="margin_left">10</property>
+            <property name="margin_right">10</property>
+            <property name="column_homogeneous">True</property>
+
+            <child>
+              <object class="GtkLabel">
+                <property name="label" translatable="yes">Category</property>
+                <property name="xalign">0</property>
               </object>
               <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="padding">8</property>
-                <property name="position">0</property>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button_test">
-                <property name="label" translatable="yes">Test</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <signal name="clicked" handler="on_button_test_clicked" swapped="no" />
+              <object class="GtkLabel">
+                <property name="label" translatable="yes">Directory</property>
+                <property name="xalign">0</property>
               </object>
               <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="padding">8</property>
-                <property name="position">1</property>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button_reload">
-                <property name="label" translatable="yes">Reload</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <signal name="clicked" handler="on_button_reload_clicked" swapped="no" />
-              </object>
+              <object class="GtkEntry" id="cat1" />
               <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="padding">8</property>
-                <property name="position">2</property>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="dir1" />
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="cat2" />
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="dir2" />
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="cat3" />
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="dir3" />
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">3</property>
               </packing>
             </child>
           </object>
-          <packing>
-            <property name="left_attach">0</property>
-            <property name="top_attach">13</property>
-            <property name="width">2</property>
-          </packing>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel">
+            <property name="label" translatable="yes">Sorting</property>
+          </object>
         </child>
       </object>
     </child>
