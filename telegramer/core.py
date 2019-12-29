@@ -658,19 +658,33 @@ class Core(CorePluginBase):
             return SET_TORRENT_TYPE
 
         torrent_id = None
+        error = None
         if 'torrent' in self.__conv_options:
             torrent = self.__conv_options['torrent']
             log.info('Adding torrent from base64 string using options `%s` ...', self.__torrent_options)
-            torrent_id = self.__core.add_torrent_file('', torrent, self.__torrent_options or {})
+            try:
+                torrent_id = self.__core.add_torrent_file('', torrent, self.__torrent_options or {})
+            except Exception as e:
+                log.error(e)
+                error = e
         elif 'magnet' in self.__conv_options:
             magnet = self.__conv_options['magnet']
             log.debug('Adding torrent from magnet URI `%s` using options `%s` ...', magnet, self.__torrent_options)
-            torrent_id = self.__core.add_torrent_magnet(magnet, self.__torrent_options or {})
+            try:
+                torrent_id = self.__core.add_torrent_magnet(magnet, self.__torrent_options or {})
+            except Exception as e:
+                log.error(e)
+                error = e
 
         if torrent_id:
             self.apply_label(torrent_id, self.__conv_options)
         else:
-            update.message.reply_text(STRINGS['error'], reply_markup=ReplyKeyboardRemove())
+            if error:
+                update.message.reply_text(
+                    "{0}\n{1}".format(STRINGS['error'], error),
+                    reply_markup=ReplyKeyboardRemove())
+            else:
+                update.message.reply_text(STRINGS['error'], reply_markup=ReplyKeyboardRemove())
 
         self.__conv_options = None
         self.__torrent_options = None
