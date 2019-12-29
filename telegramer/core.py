@@ -54,7 +54,7 @@ from deluge.core.eventmanager import EventManager
 from deluge.core.torrentmanager import TorrentManager
 from deluge.core.core import Core as DelugeCore
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, BaseFilter, ConversationHandler
 from telegram.utils.request import Request
 from base64 import b64encode
 from random import choice
@@ -79,7 +79,7 @@ HELP_MESSAGE = \
 
 MARKDOWN_PARSE_MODE = 'Markdown'
 
-SET_CATEGORY, SET_LABEL, SET_TORRENT_TYPE, ADD_MAGNET, ADD_TORRENT, ADD_URL = range(6)
+NEXT, SET_CATEGORY, SET_LABEL, SET_TORRENT_TYPE, SET_MAGNET, SET_TORRENT, SET_URL = range(7)
 
 DEFAULT_PREFS = {
     'telegram_token': '',
@@ -182,6 +182,22 @@ def format_torrent_info(torrent):
     return None
 
 
+class MagnetFilter(BaseFilter):
+    def filter(self, message):
+        text = message.text
+        return text and not text.startswith('/') and is_magnet(text)
+
+
+class UrlFilter(BaseFilter):
+    def filter(self, message):
+        text = message.text
+        return text and not text.startswith('/') and is_url(text)
+
+
+magnet_filter = MagnetFilter()
+url_filter = UrlFilter()
+
+
 class Core(CorePluginBase):
     def __init__(self, *args):
         super(Core, self).__init__(*args)
@@ -197,8 +213,8 @@ class Core(CorePluginBase):
         self.__config = None
         self.__whitelist = []
         self.__notifylist = []
-        self.__conv_options = {}
-        self.__torrent_options = {}
+        self.__conv_options = None
+        self.__torrent_options = None
         self.__commands = {
             'list': self.cmd_list,
             'down': self.cmd_down,
@@ -224,8 +240,8 @@ class Core(CorePluginBase):
 
         self.__whitelist = []
         self.__notifylist = []
-        self.__conv_options = {}
-        self.__torrent_options = {}
+        self.__conv_options = None
+        self.__torrent_options = None
 
         try:
             self.__config = deluge.configmanager.ConfigManager('telegramer.conf', DEFAULT_PREFS)
@@ -258,21 +274,27 @@ class Core(CorePluginBase):
             self.__updater = Updater(bot=self.__bot)
             # Get the dispatcher to register handlers
             dp = self.__updater.dispatcher
-            # Add conversation handler with the different states
-            conv_handler = ConversationHandler(
-                entry_points=[CommandHandler('add', self.add)],
-                states={
-                    SET_CATEGORY: [MessageHandler(Filters.text, self.set_category)],
-                    SET_LABEL: [MessageHandler(Filters.text, self.set_label)],
-                    SET_TORRENT_TYPE: [MessageHandler(Filters.text, self.set_torrent_type)],
-                    ADD_MAGNET: [MessageHandler(Filters.text, self.add_magnet)],
-                    ADD_TORRENT: [MessageHandler(Filters.document, self.add_torrent)],
-                    ADD_URL: [MessageHandler(Filters.text, self.add_url)]
-                },
-                fallbacks=[CommandHandler('cancel', self.cmd_cancel)]
-            )
 
-            dp.add_handler(conv_handler)
+            # Add conversation handler with the different states
+            dp.add_handler(
+                ConversationHandler(
+                    entry_points=[
+                        CommandHandler('add', self.add),
+                        MessageHandler(magnet_filter, self.add_magnet),
+                        MessageHandler(url_filter, self.add_url),
+                        MessageHandler(Filters.document, self.add_torrent)
+                    ],
+                    states={
+                        SET_CATEGORY: [MessageHandler(Filters.text, self.set_category)],
+                        SET_LABEL: [MessageHandler(Filters.text, self.set_label)],
+                        SET_TORRENT_TYPE: [MessageHandler(Filters.text, self.set_torrent_type)],
+                        SET_MAGNET: [MessageHandler(Filters.text, self.set_magnet)],
+                        SET_TORRENT: [MessageHandler(Filters.document, self.set_torrent)],
+                        SET_URL: [MessageHandler(Filters.text, self.set_url)]
+                    },
+                    fallbacks=[CommandHandler('cancel', self.cmd_cancel)]
+                )
+            )
 
             for key, value in self.__commands.items():
                 dp.add_handler(CommandHandler(key, value))
@@ -378,6 +400,14 @@ class Core(CorePluginBase):
             return
 
         log.info("User %s canceled the conversation." % str(update.message.chat.id))
+
+        if not self.__conv_options and not self.__torrent_options:
+            update.message.reply_text('No active operation', reply_markup=ReplyKeyboardRemove())
+            return ConversationHandler.END
+
+        self.__conv_options = None
+        self.__torrent_options = None
+
         update.message.reply_text('Operation cancelled', reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
 
@@ -432,14 +462,146 @@ class Core(CorePluginBase):
                           parse_mode=MARKDOWN_PARSE_MODE)
         return ConversationHandler.END
 
-    def add(self, bot, update):
+    def __set_category(self, bot, update):
+        text = update.message.text
+        log.info("set_category: {0}".format(text))
+
+        if text != STRINGS['no_category']:
+            move_completed_path = None
+            for i in range(3):
+                i += 1
+                cat_key = 'cat' + str(i)
+                if self.__config[cat_key] == text:
+                    dir_key = 'dir' + str(i)
+                    move_completed_path = self.__config[dir_key]
+                    break
+
+            # If none of the existing categories were selected,
+            # maybe user is trying to save to a new directory
+            if not move_completed_path:
+                log.debug('Custom directory entered: ' + str(text))
+                if text[0] == '"' and text[-1] == '"':
+                    custom_path = os.path.abspath(os.path.realpath(text[1:-1]))
+                    log.debug('Attempt to create and save to: ' + str(custom_path))
+                    if not os.path.exists(custom_path):
+                        os.makedirs(custom_path)
+                    move_completed_path = custom_path
+
+            if move_completed_path:
+                # move_completed_path vs download_location
+                self.__torrent_options['move_completed_path'] = move_completed_path
+                self.__torrent_options['move_completed'] = True
+
+        self.__conv_options['category'] = text
+
+    def __set_label(self, bot, update):
+        label = update.message.text.lower()
+        log.info("set_label: {0}".format(label))
+
+        self.__conv_options['label'] = label
+
+    def __set_torrent_type(self, bot, update):
+        torrent_type = update.message.text
+        log.info("set_torrent_type: {0}".format(torrent_type))
+
+        if torrent_type == 'Magnet':
+            update.message.reply_text(STRINGS['send_magnet'], reply_markup=ReplyKeyboardRemove())
+            return SET_MAGNET
+
+        if torrent_type == '.torrent':
+            update.message.reply_text(STRINGS['send_file'], reply_markup=ReplyKeyboardRemove())
+            return SET_TORRENT
+
+        if torrent_type == 'URL':
+            update.message.reply_text(STRINGS['send_url'], reply_markup=ReplyKeyboardRemove())
+            return SET_URL
+
+        update.message.reply_text(STRINGS['error'], reply_markup=ReplyKeyboardRemove())
+        return ConversationHandler.END
+
+    def __set_magnet(self, bot, update):
+        magnet = update.message.text
+        log.info("set_magnet: {0}".format(magnet))
+
+        if not is_magnet(magnet):
+            update.message.reply_text(STRINGS['not_magnet'], reply_markup=ReplyKeyboardRemove())
+            return SET_MAGNET
+
+        self.__conv_options['magnet'] = magnet
+
+    def __set_torrent(self, bot, update):
+        document = update.message.document
+        log.info("set_torrent: {0}".format(document))
+
+        if document.mime_type != 'application/x-bittorrent':
+            update.message.reply_text(STRINGS['not_file'], reply_markup=ReplyKeyboardRemove())
+            return SET_TORRENT
+
+        try:
+            # Get file info
+            file_info = bot.get_file(document.file_id)
+
+            # Download file
+            response = http.request('GET', file_info.file_path, headers=HEADERS)
+            file_content = response.data
+
+            # Base64 encode file data
+            self.__conv_options['torrent'] = b64encode(file_content)
+        except Exception as e:
+            log.error(e)
+            update.message.reply_text(STRINGS['download_fail'], reply_markup=ReplyKeyboardRemove())
+            return SET_TORRENT
+
+    def __set_url(self, bot, update):
+        url = update.message.text.strip()
+        log.info("set_url: {0}".format(url))
+
+        if not is_url(url):
+            update.message.reply_text(STRINGS['not_url'], reply_markup=ReplyKeyboardRemove())
+            return SET_URL
+
+        try:
+            # Download file
+            response = http.request('GET', url, headers=HEADERS)
+            file_content = response.data
+
+            # Base64 encode file data
+            self.__conv_options['torrent'] = b64encode(file_content)
+        except Exception as e:
+            log.error(e)
+            update.message.reply_text(STRINGS['download_fail'], reply_markup=ReplyKeyboardRemove())
+            return SET_URL
+
+    def __proc_conv_step(self, step, bot, update):
+        if step == NEXT:
+            return
+        if step == SET_CATEGORY:
+            return self.__set_category(bot, update)
+        if step == SET_LABEL:
+            return self.__set_label(bot, update)
+        if step == SET_TORRENT_TYPE:
+            return self.__set_torrent_type(bot, update)
+        if step == SET_MAGNET:
+            return self.__set_magnet(bot, update)
+        if step == SET_TORRENT:
+            return self.__set_torrent(bot, update)
+        if step == SET_URL:
+            return self.__set_url(bot, update)
+
+    def __proc_conv(self, step, bot, update):
         if not self.verify_user(bot, update):
             return
 
-        self.__conv_options = {}
-        self.__torrent_options = {}
+        if not self.__conv_options:
+            self.__conv_options = {}
+        if not self.__torrent_options:
+            self.__torrent_options = {}
 
-        try:
+        step_result = self.__proc_conv_step(step, bot, update)
+        if step_result:
+            return step_result
+
+        if 'category' not in self.__conv_options:
             keyboard_options = []
             """Currently there are 3 possible categories so
             loop through cat1-3 and dir1-3, check if directories exist
@@ -462,195 +624,112 @@ class Core(CorePluginBase):
                 reply_markup=ReplyKeyboardMarkup(keyboard_options, one_time_keyboard=True))
 
             return SET_CATEGORY
-        except Exception as e:
-            log.error(e)
 
-    def set_category(self, bot, update):
-        if not self.verify_user(bot, update):
-            return
-
-        try:
-            if update.message.text != '/add' and update.message.text != STRINGS['no_category']:
-                move_completed_path = None
-                for i in range(3):
-                    i += 1
-                    cat_key = 'cat' + str(i)
-                    if self.__config[cat_key] == update.message.text:
-                        dir_key = 'dir' + str(i)
-                        move_completed_path = self.__config[dir_key]
-                        break
-
-                # If none of the existing categories were selected,
-                # maybe user is trying to save to a new directory
-                if not move_completed_path:
-                    log.debug('Custom directory entered: ' + str(update.message.text))
-                    if update.message.text[0] == '"' and update.message.text[-1] == '"':
-                        custom_path = os.path.abspath(os.path.realpath(update.message.text[1:-1]))
-                        log.debug('Attempt to create and save to: ' + str(custom_path))
-                        if not os.path.exists(custom_path):
-                            os.makedirs(custom_path)
-                        move_completed_path = custom_path
-
-                if move_completed_path:
-                    # move_completed_path vs download_location
-                    self.__torrent_options['move_completed_path'] = move_completed_path
-                    self.__torrent_options['move_completed'] = True
-
+        if 'label' not in self.__conv_options:
             keyboard_options = []
             try:
-                self.__core.enable_plugin('Label')
-                label_plugin = component.get('CorePlugin.Label')
-                if label_plugin:
-                    for label in label_plugin.get_labels():
-                        keyboard_options.append([label])
+                if 'Label' in self.__core.get_enabled_plugins():
+                    label_plugin = component.get('CorePlugin.Label')
+                    if label_plugin:
+                        for label in label_plugin.get_labels():
+                            keyboard_options.append([label])
+
+                    keyboard_options.append([STRINGS['no_label']])
             except Exception as e:
                 log.debug('Enabling Label plugin failed')
                 log.error(e)
-            keyboard_options.append([STRINGS['no_label']])
 
-            update.message.reply_text(
-                STRINGS['which_label'],
-                reply_markup=ReplyKeyboardMarkup(keyboard_options, one_time_keyboard=True))
+            if len(keyboard_options) > 0:
+                update.message.reply_text(
+                    STRINGS['which_label'],
+                    reply_markup=ReplyKeyboardMarkup(keyboard_options, one_time_keyboard=True))
 
-            return SET_LABEL
-        except Exception as e:
-            log.error(e)
+                return SET_LABEL
 
-    def set_label(self, bot, update):
-        if not self.verify_user(bot, update):
-            return
+            self.__conv_options['label'] = STRINGS['no_label'].lower()
 
-        if not self.__conv_options:
-            self.__conv_options = {}
-
-        label = update.message.text.lower()
-        self.__conv_options['label'] = label
-        log.debug("Label: {0}".format(label))
-
-        try:
+        if 'torrent' not in self.__conv_options and 'magnet' not in self.__conv_options:
             # Request torrent type
             keyboard_options = [['Magnet'], ['.torrent'], ['URL']]
             update.message.reply_text(
                 STRINGS['what_kind'],
                 reply_markup=ReplyKeyboardMarkup(keyboard_options, one_time_keyboard=True))
-            return SET_TORRENT_TYPE
-        except Exception as e:
-            log.error(e)
 
-    def set_torrent_type(self, bot, update):
+            return SET_TORRENT_TYPE
+
+        torrent_id = None
+        if 'torrent' in self.__conv_options:
+            torrent = self.__conv_options['torrent']
+            log.info('Adding torrent from base64 string using options `%s` ...', self.__torrent_options)
+            torrent_id = self.__core.add_torrent_file('', torrent, self.__torrent_options or {})
+        elif 'magnet' in self.__conv_options:
+            magnet = self.__conv_options['magnet']
+            log.debug('Adding torrent from magnet URI `%s` using options `%s` ...', magnet, self.__torrent_options)
+            torrent_id = self.__core.add_torrent_magnet(magnet, self.__torrent_options or {})
+
+        if torrent_id:
+            self.apply_label(torrent_id, self.__conv_options)
+        else:
+            update.message.reply_text(STRINGS['error'], reply_markup=ReplyKeyboardRemove())
+
+        self.__conv_options = None
+        self.__torrent_options = None
+
+        return ConversationHandler.END
+
+    def add(self, bot, update):
         if not self.verify_user(bot, update):
             return
 
-        torrent_type = update.message.text
+        self.__conv_options = None
+        self.__torrent_options = None
 
-        try:
-            if torrent_type == 'Magnet':
-                update.message.reply_text(STRINGS['send_magnet'], reply_markup=ReplyKeyboardRemove())
-                return ADD_MAGNET
-
-            if torrent_type == '.torrent':
-                update.message.reply_text(STRINGS['send_file'], reply_markup=ReplyKeyboardRemove())
-                return ADD_TORRENT
-
-            if torrent_type == 'URL':
-                update.message.reply_text(STRINGS['send_url'], reply_markup=ReplyKeyboardRemove())
-                return ADD_URL
-
-            update.message.reply_text(STRINGS['error'], reply_markup=ReplyKeyboardRemove())
-            return ConversationHandler.END
-        except Exception as e:
-            log.error(e)
+        return self.__proc_conv(NEXT, bot, update)
 
     def add_magnet(self, bot, update):
         if not self.verify_user(bot, update):
             return
 
-        chat_id = str(update.message.chat.id)
-        log.debug("add magnet of {0}: {1}".format(chat_id, update.message.text))
+        self.__conv_options = None
+        self.__torrent_options = None
 
-        try:
-            # options = None
-            meta_info = update.message.text
-            """Adds a torrent with the given options.
-            metainfo could either be base64 torrent
-            data or a magnet link. Available options
-            are listed in deluge.core.torrent.TorrentOptions.
-            """
-            if not is_magnet(meta_info):
-                update.message.reply_text(STRINGS['not_magnet'], reply_markup=ReplyKeyboardRemove())
-                return
-
-            log.debug('Adding torrent from magnet URI `%s` using options `%s` ...', meta_info, self.__torrent_options)
-            torrent_id = self.__core.add_torrent_magnet(meta_info, self.__torrent_options or {})
-            self.apply_label(torrent_id, self.__conv_options)
-            self.__conv_options = None
-
-            return ConversationHandler.END
-        except Exception as e:
-            log.error(e)
-            update.message.reply_text(STRINGS['download_fail'], reply_markup=ReplyKeyboardRemove())
-
-    def add_torrent(self, bot, update):
-        if not self.verify_user(bot, update):
-            return
-
-        message = update.message
-        chat_id = str(message.chat.id)
-        document = message.document
-        log.debug('add torrent of {0}: {1}'.format(chat_id, document))
-
-        if document.mime_type != 'application/x-bittorrent':
-            message.reply_text(STRINGS['not_file'], reply_markup=ReplyKeyboardRemove())
-            return
-
-        try:
-            # Get file info
-            file_info = bot.get_file(document.file_id)
-
-            # Download file
-            response = http.request('GET', file_info.file_path, headers=HEADERS)
-            file_contents = response.data
-
-            # Base64 encode file data
-            meta_info = b64encode(file_contents)
-            log.info('Adding torrent from base64 string using options `{0}` ...'.format(self.__torrent_options))
-            torrent_id = self.__core.add_torrent_file('', meta_info, self.__torrent_options or {})
-            self.apply_label(torrent_id, self.__conv_options)
-            self.__conv_options = None
-
-            return ConversationHandler.END
-        except Exception as e:
-            log.error(e)
-            message.reply_text(STRINGS['download_fail'], reply_markup=ReplyKeyboardRemove())
+        return self.__proc_conv(SET_MAGNET, bot, update)
 
     def add_url(self, bot, update):
         if not self.verify_user(bot, update):
             return
 
-        chat_id = str(update.message.chat.id)
-        log.debug("add url of %s: %s" % (chat_id, update.message.text))
+        self.__conv_options = None
+        self.__torrent_options = None
 
-        url = update.message.text.strip()
-        if not is_url(url):
-            update.message.reply_text(STRINGS['not_url'], reply_markup=ReplyKeyboardRemove())
+        return self.__proc_conv(SET_URL, bot, update)
+
+    def add_torrent(self, bot, update):
+        if not self.verify_user(bot, update):
             return
 
-        try:
-            # Download file
-            response = http.request('GET', url, headers=HEADERS)
-            file_contents = response.data
+        self.__conv_options = None
+        self.__torrent_options = None
 
-            # Base64 encode file data
-            meta_info = b64encode(file_contents)
-            log.info('Adding torrent from base64 string using options `%s` ...', self.__torrent_options)
-            torrent_id = self.__core.add_torrent_file('', meta_info, self.__torrent_options or {})
-            self.apply_label(torrent_id, self.__conv_options)
-            self.__conv_options = None
+        return self.__proc_conv(SET_TORRENT, bot, update)
 
-            return ConversationHandler.END
-        except Exception as e:
-            log.error(e)
-            update.message.reply_text(STRINGS['download_fail'], reply_markup=ReplyKeyboardRemove())
+    def set_category(self, bot, update):
+        return self.__proc_conv(SET_CATEGORY, bot, update)
+
+    def set_label(self, bot, update):
+        return self.__proc_conv(SET_LABEL, bot, update)
+
+    def set_torrent_type(self, bot, update):
+        return self.__proc_conv(SET_TORRENT_TYPE, bot, update)
+
+    def set_magnet(self, bot, update):
+        return self.__proc_conv(SET_MAGNET, bot, update)
+
+    def set_torrent(self, bot, update):
+        return self.__proc_conv(SET_TORRENT, bot, update)
+
+    def set_url(self, bot, update):
+        return self.__proc_conv(SET_URL, bot, update)
 
     def apply_label(self, torrent_id, options):
         if not options or not isinstance(options, dict):
