@@ -37,10 +37,107 @@ Copyright:
     statement from all source files in the program, then also delete it here.
 */
 
+CategoryWindowBase = Ext.extend(Ext.Window, {
+    layout: 'fit',
+    width: 400,
+    height: 130,
+    closeAction: 'hide',
+
+    initComponent: function () {
+        CategoryWindowBase.superclass.initComponent.call(this);
+
+        this.addButton(_('Cancel'), this.onCancelClick, this);
+        this.form = this.add({
+            xtype: 'form',
+            baseCls: 'x-plain',
+            bodyStyle: 'padding: 5px',
+            items: [
+                {
+                    xtype: 'textfield',
+                    fieldLabel: _('Name'),
+                    name: 'name',
+                    width: 270,
+                },
+                {
+                    xtype: 'textfield',
+                    fieldLabel: _('Directory'),
+                    name: 'directory',
+                    width: 270,
+                },
+            ],
+        });
+    },
+
+    onCancelClick: function () {
+        this.hide();
+    },
+});
+
+AddCategoryWindow = Ext.extend(CategoryWindowBase, {
+    title: _('Add Category'),
+
+    initComponent: function () {
+        AddCategoryWindow.superclass.initComponent.call(this);
+
+        this.addButton(_('Add'), this.onAddClick, this);
+        this.addEvents('add');
+    },
+
+    show: function () {
+        AddCategoryWindow.superclass.show.call(this);
+
+        this.form.getForm().setValues({
+            name: '',
+            directory: '',
+        });
+    },
+
+    onAddClick: function () {
+        let values = this.form.getForm().getFieldValues();
+        this.fireEvent(
+            'add',
+            this,
+            values.name,
+            values.directory
+        );
+    },
+});
+
+EditCategoryWindow = Ext.extend(CategoryWindowBase, {
+    title: _('Edit Category'),
+
+    initComponent: function () {
+        EditCategoryWindow.superclass.initComponent.call(this);
+
+        this.addButton(_('Save'), this.onSaveClick, this);
+        this.addEvents('save');
+    },
+
+    show: function (index, category) {
+        EditCategoryWindow.superclass.show.call(this);
+
+        this.index = index;
+        this.form.getForm().setValues({
+            name: category.get('name'),
+            directory: category.get('directory'),
+        });
+    },
+
+    onSaveClick: function () {
+        let values = this.form.getForm().getFieldValues();
+        this.fireEvent(
+            'save',
+            this,
+            this.index,
+            values.name,
+            values.directory
+        );
+    },
+});
+
 TelegramerPage = Ext.extend(Ext.TabPanel, {
-    title: _("Telegramer"),
+    title: _('Telegramer'),
     header: false,
-    autoHeight: true,
     border: false,
     activeTab: 0,
 
@@ -49,6 +146,7 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
 
         let panel = this.add({
             title: _('Bot Settings'),
+            layout: 'fit',
         });
         let fieldset = panel.add({
             xtype: 'fieldset',
@@ -104,6 +202,7 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
 
         panel = this.add({
             title: _('Notifications'),
+            layout: 'fit',
         });
         fieldset = panel.add({
             xtype: 'fieldset',
@@ -128,58 +227,138 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
 
         panel = this.add({
             title: _('Sorting'),
+            layout: 'fit',
         });
-        fieldset = panel.add({
-            xtype: 'fieldset',
-            border: false,
-            autoHeight: true,
-            labelAlign: 'top',
-            defaultType: 'textfield',
-            defaults: {
-                width: '94%'
+        this.categoriesStore = new Ext.data.SimpleStore({
+            fields: [
+                {name: 'name', mapping: 'name'},
+                {name: 'directory', mapping: 'directory'},
+            ]
+        });
+        this.categoriesListView = new Ext.list.ListView({
+            store: this.categoriesStore,
+            columns: [
+                {
+                    header: _('Name'),
+                    dataIndex: 'name',
+                    width: 0.3,
+                },
+                {
+                    header: _('Directory'),
+                    dataIndex: 'directory',
+                },
+            ],
+            singleSelect: true,
+            disableHeaders: true,
+        });
+        this.categoriesListView.on('selectionchange', this.onCategorySelectionChange, this);
+
+        this.categoriesPanel = panel.add({
+            items: [this.categoriesListView],
+            bbar: {
+                items: [
+                    {
+                        text: _('Add'),
+                        iconCls: 'icon-add',
+                        handler: this.onAddCategoryClick,
+                        scope: this,
+                    },
+                    {
+                        text: _('Edit'),
+                        iconCls: 'icon-edit',
+                        handler: this.onEditCategoryClick,
+                        scope: this,
+                        disabled: true,
+                    },
+                    '->',
+                    {
+                        text: _('Remove'),
+                        iconCls: 'icon-remove',
+                        handler: this.onRemoveCategoryClick,
+                        scope: this,
+                        disabled: true,
+                    },
+                ],
             },
-            layout: {
-                type: 'table',
-                columns: 2,
-                tableAttrs: {
-                    style: 'width: 100%; border-spacing: 6px;'
-                }
-            }
-        });
-        fieldset.add({
-            xtype: 'label',
-            text: _('Category')
-        });
-        fieldset.add({
-            xtype: 'label',
-            text: _('Directory')
-        });
-        this.cat1 = fieldset.add({
-            name: 'cat1',
-            fieldLabel: _('Category 1')
-        });
-        this.dir1 = fieldset.add({
-            name: 'dir1',
-            fieldLabel: _('Directory 1')
-        });
-        this.cat2 = fieldset.add({
-            name: 'cat2',
-            fieldLabel: _('Category 2')
-        });
-        this.dir2 = fieldset.add({
-            name: 'dir2',
-            fieldLabel: _('Directory 2')
-        });
-        this.cat3 = fieldset.add({
-            name: 'cat3',
-            fieldLabel: _('Category 3')
-        });
-        this.dir3 = fieldset.add({
-            name: 'dir3',
-            fieldLabel: _('Directory 3')
         });
 
         this.on('show', this.onPreferencesShow, this);
+    },
+
+    onCategorySelectionChange: function (sender, selections) {
+        if (selections.length) {
+            this.categoriesPanel.getBottomToolbar().items.get(1).enable();
+            this.categoriesPanel.getBottomToolbar().items.get(3).enable();
+        } else {
+            this.categoriesPanel.getBottomToolbar().items.get(1).disable();
+            this.categoriesPanel.getBottomToolbar().items.get(3).disable();
+        }
+    },
+    updateCategories: function () {
+        deluge.client.telegramer.get_categories({
+            success: function (categories) {
+                this.categoriesStore.loadData(categories);
+            },
+            scope: this,
+        });
+    },
+    onAddCategoryClick: function () {
+        if (!this.addCategoryWindow) {
+            this.addCategoryWindow = new AddCategoryWindow();
+            this.addCategoryWindow.on(
+                'add',
+                function (window, name, directory) {
+                    deluge.client.telegramer.add_category(
+                        name,
+                        directory,
+                        {
+                            success: function () {
+                                window.hide();
+                                this.updateCategories();
+                            },
+                            scope: this,
+                        });
+                },
+                this
+            );
+        }
+        this.addCategoryWindow.show();
+    },
+    onEditCategoryClick: function () {
+        if (!this.editCategoryWindow) {
+            this.editCategoryWindow = new EditCategoryWindow();
+            this.editCategoryWindow.on(
+                'save',
+                function (window, index, name, directory) {
+                    deluge.client.telegramer.update_category(
+                        index,
+                        name,
+                        directory,
+                        {
+                            success: function () {
+                                window.hide();
+                                this.updateCategories();
+                            },
+                            scope: this,
+                        });
+                },
+                this
+            );
+        }
+
+        let category = this.categoriesListView.getSelectedRecords()[0];
+        let index = this.categoriesStore.indexOf(category);
+        this.editCategoryWindow.show(index, category);
+    },
+    onRemoveCategoryClick: function () {
+        let category = this.categoriesListView.getSelectedRecords()[0];
+        let index = this.categoriesStore.indexOf(category);
+        deluge.client.telegramer.remove_category(index, {
+            success: function () {
+                this.updateCategories();
+            },
+            scope: this,
+        });
     },
 
     onTestClick: function () {
@@ -202,12 +381,7 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
                 this.telegram_notify_added.setValue(config['telegram_notify_added']);
                 this.telegram_notify_finished.setValue(config['telegram_notify_finished']);
 
-                this.cat1.setValue(config['cat1']);
-                this.dir1.setValue(config['dir1']);
-                this.cat2.setValue(config['cat2']);
-                this.dir2.setValue(config['dir2']);
-                this.cat3.setValue(config['cat3']);
-                this.dir3.setValue(config['dir3']);
+                this.categoriesStore.loadData(config['categories']);
             },
             scope: this,
         });
@@ -222,13 +396,6 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
 
         config['telegram_notify_added'] = this.telegram_notify_added.getValue();
         config['telegram_notify_finished'] = this.telegram_notify_finished.getValue();
-
-        config['cat1'] = this.cat1.getValue();
-        config['dir1'] = this.dir1.getValue();
-        config['cat2'] = this.cat2.getValue();
-        config['dir2'] = this.dir2.getValue();
-        config['cat3'] = this.cat3.getValue();
-        config['dir3'] = this.dir3.getValue();
 
         deluge.client.telegramer.set_config(config);
     },

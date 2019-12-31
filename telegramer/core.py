@@ -88,13 +88,12 @@ DEFAULT_PREFS = {
     'telegram_users_notify': '',
     'telegram_notify_finished': True,
     'telegram_notify_added': True,
-    'dir1': '',
-    'cat1': '',
-    'dir2': '',
-    'cat2': '',
-    'dir3': '',
-    'cat3': ''
+    'categories': []
 }
+
+PREFS_TO_RESTART = [
+    'telegram_token'
+]
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
@@ -235,6 +234,27 @@ class Core(CorePluginBase):
 
         log.debug('Initialize class')
 
+    def __init_users(self, config):
+        self.__whitelist = []
+        self.__notifylist = []
+
+        if config['telegram_user']:
+            self.__whitelist.append(str(config['telegram_user']))
+            self.__notifylist.append(str(config['telegram_user']))
+        if config['telegram_users']:
+            telegram_user_list = filter(None, [x.strip() for x in
+                                               str(config['telegram_users']).split(',')])
+            # Merge with whitelist and remove duplicates - order will be lost
+            self.__whitelist = list(set(self.__whitelist + telegram_user_list))
+            log.debug('Whitelist: ' + str(self.__whitelist))
+        if config['telegram_users_notify']:
+            n = filter(None, [x.strip() for x in
+                              str(config['telegram_users_notify']).split(',')])
+            telegram_user_list_notify = [a for a in n if is_int(a)]
+            # Merge with notifylist and remove duplicates - order will be lost
+            self.__notifylist = list(set(self.__notifylist + telegram_user_list_notify))
+            log.debug('Notify: ' + str(self.__notifylist))
+
     def enable(self):
         log.info('Enable')
 
@@ -252,22 +272,7 @@ class Core(CorePluginBase):
             if not telegram_token:
                 return
 
-            if self.__config['telegram_user']:
-                self.__whitelist.append(str(self.__config['telegram_user']))
-                self.__notifylist.append(str(self.__config['telegram_user']))
-                if self.__config['telegram_users']:
-                    telegram_user_list = filter(None, [x.strip() for x in
-                                                       str(self.__config['telegram_users']).split(',')])
-                    # Merge with whitelist and remove duplicates - order will be lost
-                    self.__whitelist = list(set(self.__whitelist + telegram_user_list))
-                    log.debug('Whitelist: ' + str(self.__whitelist))
-                if self.__config['telegram_users_notify']:
-                    n = filter(None, [x.strip() for x in
-                                      str(self.__config['telegram_users_notify']).split(',')])
-                    telegram_user_list_notify = [a for a in n if is_int(a)]
-                    # Merge with notifylist and remove duplicates - order will be lost
-                    self.__notifylist = list(set(self.__notifylist + telegram_user_list_notify))
-                    log.debug('Notify: ' + str(self.__notifylist))
+            self.__init_users(self.__config)
 
             self.__bot = Bot(telegram_token, request=Request(con_pool_size=8))
             # Create the EventHandler and pass it bot's token.
@@ -468,12 +473,10 @@ class Core(CorePluginBase):
 
         if text != STRINGS['no_category']:
             move_completed_path = None
-            for i in range(3):
-                i += 1
-                cat_key = 'cat' + str(i)
-                if self.__config[cat_key] == text:
-                    dir_key = 'dir' + str(i)
-                    move_completed_path = self.__config[dir_key]
+            for category in self.__config['categories']:
+                category_name = category['name']
+                if category_name == text:
+                    move_completed_path = category['directory']
                     break
 
             # If none of the existing categories were selected,
@@ -602,28 +605,28 @@ class Core(CorePluginBase):
             return step_result
 
         if 'category' not in self.__conv_options:
-            keyboard_options = []
-            """Currently there are 3 possible categories so
-            loop through cat1-3 and dir1-3, check if directories exist
-            """
-            for i in range(3):
-                i += 1
+            if 'categories' in self.__config:
+                categories = self.__config['categories']
+                if len(categories) > 0:
+                    keyboard_options = []
+                    for category in categories:
+                        category_directory = category['directory']
+                        if not os.path.isdir(category_directory):
+                            continue
 
-                dir_key = 'dir' + str(i)
-                if not os.path.isdir(self.__config[dir_key]):
-                    continue
+                        category_name = category['name']
+                        log.debug(category_name + ' ' + category_directory)
+                        keyboard_options.append([category_name])
 
-                cat_key = 'cat' + str(i)
-                log.debug(self.__config[cat_key] + ' ' + self.__config[dir_key])
-                keyboard_options.append([self.__config[cat_key]])
+                    keyboard_options.append([STRINGS['no_category']])
 
-            keyboard_options.append([STRINGS['no_category']])
+                    update.message.reply_text(
+                        '{0}\n{1}'.format(STRINGS['which_cat'], STRINGS['cancel']),
+                        reply_markup=ReplyKeyboardMarkup(keyboard_options, one_time_keyboard=True))
 
-            update.message.reply_text(
-                '{0}\n{1}'.format(STRINGS['which_cat'], STRINGS['cancel']),
-                reply_markup=ReplyKeyboardMarkup(keyboard_options, one_time_keyboard=True))
+                    return SET_CATEGORY
 
-            return SET_CATEGORY
+            self.__conv_options['category'] = STRINGS['no_category']
 
         if 'label' not in self.__conv_options:
             keyboard_options = []
@@ -851,26 +854,6 @@ class Core(CorePluginBase):
                           if filter(t)] or [STRINGS['no_items']])
 
     @export
-    def set_config(self, config):
-        """Sets the config dictionary"""
-        log.debug('Set config')
-        dirty = False
-        for key in config.keys():
-            if key in self.__config and self.__config[key] == config[key]:
-                continue
-
-            self.__config[key] = config[key]
-            dirty = True
-
-        if not dirty:
-            return
-
-        log.info('Config changed, reloading')
-        self.__config.save()
-        # Restart bot service
-        self.restart()
-
-    @export
     def restart(self):
         """Disable and enable plugin"""
         log.info('Restarting Telegramer plugin')
@@ -885,6 +868,69 @@ class Core(CorePluginBase):
             return DEFAULT_PREFS
 
         return self.__config.config
+
+    @export
+    def set_config(self, config):
+        """Sets the config dictionary"""
+        log.debug('Set config')
+        dirty = False
+        restart = False
+        for key in config.keys():
+            if key in self.__config and self.__config[key] == config[key]:
+                continue
+
+            self.__config[key] = config[key]
+            dirty = True
+
+            if key in PREFS_TO_RESTART:
+                restart = True
+
+        if not dirty:
+            return
+
+        log.info('Config changed, reloading')
+        self.__config.save()
+
+        if not restart:
+            # Reload users white/notify list
+            self.__init_users(self.__config)
+            return
+
+        # Restart bot service
+        self.restart()
+
+    @export
+    def get_categories(self):
+        if not self.__config or 'categories' not in self.__config:
+            return []
+
+        return self.__config['categories']
+
+    @export
+    def add_category(self, name, directory):
+        categories = self.__config['categories']
+        categories.append({'name': name, 'directory': directory})
+
+        self.__config['categories'] = categories
+        self.__config.save()
+
+    @export
+    def update_category(self, index, name, directory):
+        categories = self.__config['categories']
+        category = categories[index]
+        category['name'] = name
+        category['directory'] = directory
+
+        self.__config['categories'] = categories
+        self.__config.save()
+
+    @export
+    def remove_category(self, index):
+        categories = self.__config['categories']
+        categories.pop(index)
+
+        self.__config['categories'] = categories
+        self.__config.save()
 
     @export
     def send_test_message(self):
