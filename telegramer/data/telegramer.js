@@ -145,11 +145,12 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
         TelegramerPage.superclass.initComponent.call(this);
 
         let panel = this.add({
-            title: _('Bot Settings'),
+            title: _('General'),
             layout: 'fit',
         });
         let fieldset = panel.add({
             xtype: 'fieldset',
+            title: _('Bot Settings'),
             border: false,
             autoHeight: true,
             labelAlign: 'top',
@@ -200,19 +201,15 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
             }]
         });
 
-        panel = this.add({
-            title: _('Notifications'),
-            layout: 'fit',
-        });
         fieldset = panel.add({
             xtype: 'fieldset',
+            title: _('Notifications'),
             border: false,
             autoHeight: true,
             labelAlign: 'top',
             defaultType: 'checkbox',
             defaults: {
                 width: '97%',
-                height: 12,
                 hideLabel: true
             }
         });
