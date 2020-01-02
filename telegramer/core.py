@@ -47,6 +47,7 @@ from __future__ import unicode_literals
 
 import os
 import logging
+import uuid
 
 import urllib3
 
@@ -909,15 +910,20 @@ class Core(CorePluginBase):
     @export
     def add_category(self, name, directory):
         categories = self.__config['categories']
-        categories.append({'name': name, 'directory': directory})
+        categories.append({'id': uuid.uuid4().hex, 'name': name, 'directory': directory})
 
         self.__config['categories'] = categories
         self.__config.save()
 
     @export
-    def update_category(self, index, name, directory):
+    def update_category(self, id_, name, directory):
         categories = self.__config['categories']
-        category = categories[index]
+        indices = [i for i, x in enumerate(categories) if x['id'] == id_]
+        if len(indices) <= 0:
+            log.warning('Unknown category id: {0}'.format(id_))
+            return
+
+        category = categories[indices[0]]
         category['name'] = name
         category['directory'] = directory
 
@@ -925,9 +931,14 @@ class Core(CorePluginBase):
         self.__config.save()
 
     @export
-    def remove_category(self, index):
+    def remove_category(self, id_):
         categories = self.__config['categories']
-        categories.pop(index)
+        indices = [i for i, x in enumerate(categories) if x['id'] == id_]
+        if len(indices) <= 0:
+            log.warning('Unknown category id: {0}'.format(id_))
+            return
+
+        categories.pop(indices[0])
 
         self.__config['categories'] = categories
         self.__config.save()

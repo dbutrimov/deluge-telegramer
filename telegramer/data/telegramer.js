@@ -113,13 +113,13 @@ EditCategoryWindow = Ext.extend(CategoryWindowBase, {
         this.addEvents('save');
     },
 
-    show: function (index, category) {
+    show: function (id, name, directory) {
         EditCategoryWindow.superclass.show.call(this);
 
-        this.index = index;
+        this.id = id;
         this.form.getForm().setValues({
-            name: category.get('name'),
-            directory: category.get('directory'),
+            name: name,
+            directory: directory,
         });
     },
 
@@ -128,7 +128,7 @@ EditCategoryWindow = Ext.extend(CategoryWindowBase, {
         this.fireEvent(
             'save',
             this,
-            this.index,
+            this.id,
             values.name,
             values.directory
         );
@@ -156,7 +156,7 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
             labelAlign: 'top',
             defaultType: 'textfield',
             defaults: {
-                width: '97%'
+                anchor: '100%'
             }
         });
         this.telegram_token = fieldset.add({
@@ -181,23 +181,24 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
         });
         fieldset.add({
             xtype: 'container',
+            autoHeight: true,
             layout: 'hbox',
             defaults: {
                 width: '72',
-                margins: '3 6 0 0'
+                margins: '4 6 0 0'
             },
             items: [{
                 xtype: 'button',
                 name: 'telegram_test',
                 text: _('Test'),
-                scope: this,
-                handler: this.onTestClick
+                handler: this.onTestClick,
+                scope: this
             }, {
                 xtype: 'button',
                 name: 'telegram_reload',
                 text: _('Reload'),
-                scope: this,
-                handler: this.onReloadClick
+                handler: this.onReloadClick,
+                scope: this
             }]
         });
 
@@ -206,10 +207,9 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
             title: _('Notifications'),
             border: false,
             autoHeight: true,
-            labelAlign: 'top',
             defaultType: 'checkbox',
             defaults: {
-                width: '97%',
+                anchor: '100%',
                 hideLabel: true
             }
         });
@@ -228,6 +228,7 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
         });
         this.categoriesStore = new Ext.data.SimpleStore({
             fields: [
+                {name: 'id', mapping: 'id'},
                 {name: 'name', mapping: 'name'},
                 {name: 'directory', mapping: 'directory'},
             ]
@@ -326,9 +327,9 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
             this.editCategoryWindow = new EditCategoryWindow();
             this.editCategoryWindow.on(
                 'save',
-                function (window, index, name, directory) {
+                function (window, id, name, directory) {
                     deluge.client.telegramer.update_category(
-                        index,
+                        id,
                         name,
                         directory,
                         {
@@ -344,13 +345,11 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
         }
 
         let category = this.categoriesListView.getSelectedRecords()[0];
-        let index = this.categoriesStore.indexOf(category);
-        this.editCategoryWindow.show(index, category);
+        this.editCategoryWindow.show(category.get('id'), category.get('name'), category.get('directory'));
     },
     onRemoveCategoryClick: function () {
         let category = this.categoriesListView.getSelectedRecords()[0];
-        let index = this.categoriesStore.indexOf(category);
-        deluge.client.telegramer.remove_category(index, {
+        deluge.client.telegramer.remove_category(category.get('id'), {
             success: function () {
                 this.updateCategories();
             },
