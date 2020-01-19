@@ -537,7 +537,8 @@ class Core(CorePluginBase):
         document = update.message.document
         log.info("set_torrent: {0}".format(document))
 
-        if document.mime_type != 'application/x-bittorrent':
+        file_ext = os.path.splitext(document.file_name)[-1].lower()
+        if document.mime_type != 'application/x-bittorrent' and file_ext != '.torrent':
             update.message.reply_text(STRINGS['not_file'], reply_markup=ReplyKeyboardRemove())
             return SET_TORRENT
 
