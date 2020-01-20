@@ -75,6 +75,12 @@ REQUIREMENTS_MODULES = [
     # 'telegram'
 ]
 
+INSTALL_REQUIRES = [
+    'deluge',
+    'urllib3',
+    # 'python_telegram_bot'
+]
+
 setup(
     name=__plugin_name__,
     version=__version__,
@@ -86,6 +92,7 @@ setup(
     long_description=__long_description__ if __long_description__ else __description__,
 
     # install_requires=REQUIREMENTS_PACKAGES,
+    install_requires=INSTALL_REQUIRES,
     # packages=packages,
     packages=[__plugin_name__.lower()] + ['%s.%s' % (x, y) for x in REQUIREMENTS_PACKAGES for y in find_packages(x)] + REQUIREMENTS_PACKAGES,
     py_modules=REQUIREMENTS_MODULES,
