@@ -60,7 +60,7 @@ from deluge.core.eventmanager import EventManager
 from deluge.core.rpcserver import export
 from deluge.core.torrentmanager import TorrentManager
 from deluge.plugins.pluginbase import CorePluginBase
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, MAX_MESSAGE_LENGTH
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, BaseFilter, ConversationHandler
 from telegram.utils.request import Request
 
@@ -327,8 +327,11 @@ class Core(CorePluginBase):
     def update(self):
         pass
 
-    def _handle_error(self, update, context, error):
-        log.warning('Update "{0}" caused error "{1}"'.format(update, error))
+    def _handle_error(self, update, context):
+        log.warning('Update caused an error "{0}":\n{1}'.format(context.error, update))
+        update.message.reply_text(
+            "{0}\n{1}".format(STRINGS['error'], context.error),
+            reply_markup=ReplyKeyboardRemove())
 
     def _is_white_user(self, user_id):
         return self._whitelist and user_id in self._whitelist
@@ -343,7 +346,30 @@ class Core(CorePluginBase):
         update.message.reply_text(STRINGS['invalid_user'], reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
 
-    def _notify(self, bot, message, to=None, parse_mode=None):
+    def _reply_text(self, update, text, *args, **kwargs):
+        if len(text) <= MAX_MESSAGE_LENGTH:
+            update.message.reply_text(text, *args, **kwargs)
+            return
+
+        log.debug('Message length is {0}'.format(len(text)))
+        tmp = ''
+        tmp_length = 0
+        for line in text.split('\n'):
+            tmp_length += len(line) + 1
+            if tmp_length <= MAX_MESSAGE_LENGTH:
+                tmp += line + '\n'
+                continue
+
+            update.message.reply_text(tmp, *args, **kwargs)
+            tmp = line + '\n'
+            tmp_length = len(tmp)
+
+        if not tmp:
+            return
+
+        update.message.reply_text(tmp, *args, **kwargs)
+
+    def _notify(self, bot, text, to=None, parse_mode=None):
         log.debug('Send message')
         if not to:
             to = self._config['telegram_user']
@@ -361,32 +387,27 @@ class Core(CorePluginBase):
                 continue
 
             log.debug("to: " + chat_id)
-            if len(message) > 4096:
-                log.debug('Message length is {0}'.format(len(message)))
-                tmp = ''
-                for line in message.split('\n'):
-                    tmp += line + '\n'
-                    if len(tmp) < 4000:
-                        continue
-
-                    if parse_mode:
-                        bot.send_message(chat_id, tmp, parse_mode=parse_mode)
-                    else:
-                        bot.send_message(chat_id, tmp)
-                    tmp = ''
-
-                if tmp:
-                    if parse_mode:
-                        bot.send_message(chat_id, tmp, parse_mode=parse_mode)
-                    else:
-                        bot.send_message(chat_id, tmp)
-
+            if len(text) <= MAX_MESSAGE_LENGTH:
+                bot.send_message(chat_id, text, parse_mode=parse_mode)
                 continue
 
-            if parse_mode:
-                bot.send_message(chat_id, message, parse_mode=parse_mode)
-            else:
-                bot.send_message(chat_id, message)
+            log.debug('Message length is {0}'.format(len(text)))
+            tmp = ''
+            tmp_length = 0
+            for line in text.split('\n'):
+                tmp_length += len(line) + 1
+                if tmp_length <= MAX_MESSAGE_LENGTH:
+                    tmp += line + '\n'
+                    continue
+
+                bot.send_message(chat_id, tmp, parse_mode=parse_mode)
+                tmp = line + '\n'
+                tmp_length = len(tmp)
+
+            if not tmp:
+                continue
+
+            bot.send_message(chat_id, tmp, parse_mode=parse_mode)
 
         log.debug('return')
 
@@ -418,7 +439,8 @@ class Core(CorePluginBase):
             return verify_result
 
         # log.error(self.list_torrents())
-        update.message.reply_text(
+        self._reply_text(
+            update,
             self._list_torrents(lambda t:
                                 t.get_status(('state',))['state'] in
                                 ('Active', 'Downloading', 'Seeding',
@@ -431,7 +453,8 @@ class Core(CorePluginBase):
         if verify_result:
             return verify_result
 
-        update.message.reply_text(
+        self._reply_text(
+            update,
             self._list_torrents(lambda t: t.get_status(('state',))['state'] == 'Downloading'),
             parse_mode=MARKDOWN_PARSE_MODE)
         return ConversationHandler.END
@@ -441,7 +464,8 @@ class Core(CorePluginBase):
         if verify_result:
             return verify_result
 
-        update.message.reply_text(
+        self._reply_text(
+            update,
             self._list_torrents(lambda t: t.get_status(('state',))['state'] == 'Seeding'),
             parse_mode=MARKDOWN_PARSE_MODE)
         return ConversationHandler.END
@@ -451,7 +475,8 @@ class Core(CorePluginBase):
         if verify_result:
             return verify_result
 
-        update.message.reply_text(
+        self._reply_text(
+            update,
             self._list_torrents(lambda t: t.get_status(('state',))['state'] in ('Paused', 'Queued')),
             parse_mode=MARKDOWN_PARSE_MODE)
         return ConversationHandler.END

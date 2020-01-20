@@ -60,6 +60,7 @@ __pkg_data__ = {__plugin_name__.lower(): ["data/*"]}
 
 REQUIREMENTS_PACKAGES = [
     'future',
+    'tornado',
     # 'certifi',
     'telegram'
 ]

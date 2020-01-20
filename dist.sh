@@ -8,6 +8,7 @@ fi
 
 LINK_MODULES=(
   future
+  tornado
   certifi
   asn1crypto
   pycparser
