@@ -55,7 +55,7 @@ import urllib3
 from deluge import component
 from deluge.common import fsize, fpcnt, fspeed, fpeer, ftime, fdate, is_url, is_magnet
 from deluge.configmanager import ConfigManager
-from deluge.core.core import Core
+from deluge.core.core import Core as DelugeCore
 from deluge.core.eventmanager import EventManager
 from deluge.core.rpcserver import export
 from deluge.core.torrentmanager import TorrentManager
@@ -199,11 +199,51 @@ magnet_filter = MagnetFilter()
 url_filter = UrlFilter()
 
 
+def _send_message(bot, chat_id, text, **kwargs):
+    text_length = len(text)
+    while text_length > 0:
+        if text_length <= MAX_MESSAGE_LENGTH:
+            bot.send_message(chat_id, text, **kwargs)
+            break
+
+        part = text[:MAX_MESSAGE_LENGTH]
+        first_lnbr = part.rfind('\n')
+        if first_lnbr < 0:
+            bot.send_message(chat_id, part, **kwargs)
+            text = text[MAX_MESSAGE_LENGTH:]
+            text_length = len(text)
+            continue
+
+        bot.send_message(chat_id, part[:first_lnbr], **kwargs)
+        text = text[(first_lnbr + 1):]
+        text_length = len(text)
+
+
+def _reply_text(update, text, *args, **kwargs):
+    text_length = len(text)
+    while text_length > 0:
+        if text_length <= MAX_MESSAGE_LENGTH:
+            update.message.reply_text(text, *args, **kwargs)
+            break
+
+        part = text[:MAX_MESSAGE_LENGTH]
+        first_lnbr = part.rfind('\n')
+        if first_lnbr < 0:
+            update.message.reply_text(part, *args, **kwargs)
+            text = text[MAX_MESSAGE_LENGTH:]
+            text_length = len(text)
+            continue
+
+        update.message.reply_text(part[:first_lnbr], *args, **kwargs)
+        text = text[(first_lnbr + 1):]
+        text_length = len(text)
+
+
 class Core(CorePluginBase):
     def __init__(self, *args):
         super(Core, self).__init__(*args)
 
-        self._core = component.get('Core')  # type: Core
+        self._core = component.get('Core')  # type: DelugeCore
         self._event_manager = component.get('EventManager')  # type: EventManager
         self._torrent_manager = component.get('TorrentManager')  # type: TorrentManager
         self._registered_events = {}
@@ -346,70 +386,19 @@ class Core(CorePluginBase):
         update.message.reply_text(STRINGS['invalid_user'], reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
 
-    def _reply_text(self, update, text, *args, **kwargs):
-        if len(text) <= MAX_MESSAGE_LENGTH:
-            update.message.reply_text(text, *args, **kwargs)
-            return
-
-        log.debug('Message length is {0}'.format(len(text)))
-        tmp = ''
-        tmp_length = 0
-        for line in text.split('\n'):
-            tmp_length += len(line) + 1
-            if tmp_length <= MAX_MESSAGE_LENGTH:
-                tmp += line + '\n'
-                continue
-
-            update.message.reply_text(tmp, *args, **kwargs)
-            tmp = line + '\n'
-            tmp_length = len(tmp)
-
-        if not tmp:
-            return
-
-        update.message.reply_text(tmp, *args, **kwargs)
-
     def _notify(self, bot, text, to=None, parse_mode=None):
-        log.debug('Send message')
         if not to:
             to = self._config['telegram_user']
-        else:
-            log.debug('send_message, to set')
 
         if not isinstance(to, (list,)):
-            log.debug('Convert to to list')
             to = [to]
 
-        log.debug("[to] " + str(to))
         for chat_id in to:
             # Every outgoing message filtered here
             if not self._is_white_user(chat_id) and not self._is_notify_user(chat_id):
                 continue
 
-            log.debug("to: " + chat_id)
-            if len(text) <= MAX_MESSAGE_LENGTH:
-                bot.send_message(chat_id, text, parse_mode=parse_mode)
-                continue
-
-            log.debug('Message length is {0}'.format(len(text)))
-            tmp = ''
-            tmp_length = 0
-            for line in text.split('\n'):
-                tmp_length += len(line) + 1
-                if tmp_length <= MAX_MESSAGE_LENGTH:
-                    tmp += line + '\n'
-                    continue
-
-                bot.send_message(chat_id, tmp, parse_mode=parse_mode)
-                tmp = line + '\n'
-                tmp_length = len(tmp)
-
-            if not tmp:
-                continue
-
-            bot.send_message(chat_id, tmp, parse_mode=parse_mode)
-
-        log.debug('return')
+            _send_message(bot, chat_id, text, parse_mode=parse_mode)
 
     def _cancel(self, update, context):
         verify_result = self._verify_user(update, context)
@@ -439,7 +428,7 @@ class Core(CorePluginBase):
             return verify_result
 
         # log.error(self.list_torrents())
-        self._reply_text(
+        _reply_text(
             update,
             self._list_torrents(lambda t:
                                 t.get_status(('state',))['state'] in
@@ -453,7 +442,7 @@ class Core(CorePluginBase):
         if verify_result:
             return verify_result
 
-        self._reply_text(
+        _reply_text(
             update,
             self._list_torrents(lambda t: t.get_status(('state',))['state'] == 'Downloading'),
             parse_mode=MARKDOWN_PARSE_MODE)
@@ -464,7 +453,7 @@ class Core(CorePluginBase):
         if verify_result:
             return verify_result
 
-        self._reply_text(
+        _reply_text(
             update,
             self._list_torrents(lambda t: t.get_status(('state',))['state'] == 'Seeding'),
             parse_mode=MARKDOWN_PARSE_MODE)
@@ -475,7 +464,7 @@ class Core(CorePluginBase):
         if verify_result:
             return verify_result
 
-        self._reply_text(
+        _reply_text(
             update,
             self._list_torrents(lambda t: t.get_status(('state',))['state'] in ('Paused', 'Queued')),
             parse_mode=MARKDOWN_PARSE_MODE)
