@@ -200,43 +200,49 @@ url_filter = UrlFilter()
 
 
 def _send_message(bot, chat_id, text, **kwargs):
-    text_length = len(text)
+    to_send = text
+    text_length = len(to_send)
     while text_length > 0:
         if text_length <= MAX_MESSAGE_LENGTH:
-            bot.send_message(chat_id, text, **kwargs)
+            bot.send_message(chat_id, to_send, **kwargs)
             break
 
-        part = text[:MAX_MESSAGE_LENGTH]
+        part = to_send[:MAX_MESSAGE_LENGTH]
         first_lnbr = part.rfind('\n')
         if first_lnbr < 0:
             bot.send_message(chat_id, part, **kwargs)
-            text = text[MAX_MESSAGE_LENGTH:]
-            text_length = len(text)
+            to_send = to_send[MAX_MESSAGE_LENGTH:]
+            text_length = len(to_send)
             continue
 
         bot.send_message(chat_id, part[:first_lnbr], **kwargs)
-        text = text[(first_lnbr + 1):]
-        text_length = len(text)
+        to_send = to_send[(first_lnbr + 1):]
+        text_length = len(to_send)
+
+    return text
 
 
-def _reply_text(update, text, *args, **kwargs):
-    text_length = len(text)
+def _reply_text(update, text, **kwargs):
+    to_send = text
+    text_length = len(to_send)
     while text_length > 0:
         if text_length <= MAX_MESSAGE_LENGTH:
-            update.message.reply_text(text, *args, **kwargs)
+            update.message.reply_text(to_send, **kwargs)
             break
 
-        part = text[:MAX_MESSAGE_LENGTH]
+        part = to_send[:MAX_MESSAGE_LENGTH]
         first_lnbr = part.rfind('\n')
         if first_lnbr < 0:
-            update.message.reply_text(part, *args, **kwargs)
-            text = text[MAX_MESSAGE_LENGTH:]
-            text_length = len(text)
+            update.message.reply_text(part, **kwargs)
+            to_send = to_send[MAX_MESSAGE_LENGTH:]
+            text_length = len(to_send)
             continue
 
-        update.message.reply_text(part[:first_lnbr], *args, **kwargs)
-        text = text[(first_lnbr + 1):]
-        text_length = len(text)
+        update.message.reply_text(part[:first_lnbr], **kwargs)
+        to_send = to_send[(first_lnbr + 1):]
+        text_length = len(to_send)
+
+    return text
 
 
 class Core(CorePluginBase):
@@ -386,7 +392,7 @@ class Core(CorePluginBase):
         update.message.reply_text(STRINGS['invalid_user'], reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
 
-    def _notify(self, bot, text, to=None, parse_mode=None):
+    def _notify(self, bot, text, to=None, **kwargs):
         if not to:
             to = self._config['telegram_user']
 
@@ -398,7 +404,9 @@ class Core(CorePluginBase):
             if not self._is_white_user(chat_id) and not self._is_notify_user(chat_id):
                 continue
 
-            _send_message(bot, chat_id, text, parse_mode=parse_mode)
+            _send_message(bot, chat_id, text, **kwargs)
+
+        return text
 
     def _cancel(self, update, context):
         verify_result = self._verify_user(update, context)
@@ -421,6 +429,11 @@ class Core(CorePluginBase):
         log.debug("telegram_send to " + chat_id)
         update.message.reply_text(HELP_MESSAGE, parse_mode=MARKDOWN_PARSE_MODE)
         return ConversationHandler.END
+
+    def _list_torrents(self, filter=lambda _: True):
+        return '\n'.join([format_torrent_info(t) for t
+                          in self._torrent_manager.torrents.values()
+                          if filter(t)] or [STRINGS['no_items']])
 
     def _list(self, update, context):
         verify_result = self._verify_user(update, context)
@@ -559,6 +572,7 @@ class Core(CorePluginBase):
 
             # Base64 encode file data
             context.user_data['torrent'] = base64.b64encode(file_content)
+            context.user_data['file_name'] = document.file_name
         except Exception as e:
             log.error(e)
             update.message.reply_text(STRINGS['download_fail'], reply_markup=ReplyKeyboardRemove())
@@ -581,6 +595,7 @@ class Core(CorePluginBase):
 
             # Base64 encode file data
             context.user_data['torrent'] = base64.b64encode(file_content)
+            # context.user_data['file_name'] = ''  # TODO: extract file name from url
         except Exception as e:
             log.error(e)
             update.message.reply_text(STRINGS['download_fail'], reply_markup=ReplyKeyboardRemove())
@@ -672,18 +687,21 @@ class Core(CorePluginBase):
         torrent_id = None
         error = None
         if 'torrent' in context.user_data:
+            file_name = context.user_data.get('file_name') or ''
             torrent = context.user_data['torrent']
             torrent_options = context.user_data.get('torrent_options') or {}
-            log.info('Adding torrent from base64 string using options `{0}` ...'.format(torrent_options))
+            log.info("Adding torrent `{0}` from base64 string using options `{1}` ..."
+                     .format(file_name, torrent_options))
             try:
-                torrent_id = self._core.add_torrent_file('', torrent, torrent_options)
+                torrent_id = self._core.add_torrent_file(file_name, torrent, torrent_options)
             except Exception as e:
                 log.error(e)
                 error = e
         elif 'magnet' in context.user_data:
             magnet = context.user_data['magnet']
             torrent_options = context.user_data.get('torrent_options') or {}
-            log.debug('Adding torrent from magnet URI `{0}` using options `{1}` ...'.format(magnet, torrent_options))
+            log.debug('Adding torrent from magnet URI `{0}` using options `{1}` ...'
+                      .format(magnet, torrent_options))
             try:
                 torrent_id = self._core.add_torrent_magnet(magnet, torrent_options)
             except Exception as e:
@@ -692,6 +710,10 @@ class Core(CorePluginBase):
 
         if torrent_id:
             self._apply_label(torrent_id, context.user_data)
+            update.message.reply_text(
+                'Added Torrent ID *{0}*'.format(torrent_id),
+                parse_mode=MARKDOWN_PARSE_MODE,
+                reply_markup=ReplyKeyboardRemove())
         else:
             if error:
                 update.message.reply_text(
@@ -858,11 +880,6 @@ class Core(CorePluginBase):
         if event == 'complete':
             self._handle_torrent_complete(torrent_id)
             return
-
-    def _list_torrents(self, filter=lambda _: True):
-        return '\n'.join([format_torrent_info(t) for t
-                          in self._torrent_manager.torrents.values()
-                          if filter(t)] or [STRINGS['no_items']])
 
     @export
     def restart(self):
