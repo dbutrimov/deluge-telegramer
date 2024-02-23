@@ -56,30 +56,12 @@ Send notifications, add and view torrents on Deluge
 using Telegram messenger
 """
 __pkg_data__ = {__plugin_name__.lower(): ["data/*"]}
-# packages = find_packages()
-
-REQUIREMENTS_PACKAGES = [
-    'future',
-    'tornado',
-    # 'certifi',
-    'telegram'
-]
-
-REQUIREMENTS_MODULES = [
-    # 'future',
-    # 'certifi',
-    # 'asn1crypto',
-    # 'pycparser',
-    # 'cffi',
-    # 'cryptography',
-    # 'urllib3',
-    # 'telegram'
-]
+packages = find_packages()
 
 INSTALL_REQUIRES = [
     'deluge',
     'urllib3',
-    # 'python_telegram_bot'
+    'python_telegram_bot==12.3.0'
 ]
 
 setup(
@@ -92,19 +74,16 @@ setup(
     license=__license__,
     long_description=__long_description__ if __long_description__ else __description__,
 
-    # install_requires=REQUIREMENTS_PACKAGES,
+    packages=packages,
     install_requires=INSTALL_REQUIRES,
-    # packages=packages,
-    packages=[__plugin_name__.lower()] + ['%s.%s' % (x, y) for x in REQUIREMENTS_PACKAGES for y in find_packages(x)] + REQUIREMENTS_PACKAGES,
-    py_modules=REQUIREMENTS_MODULES,
+
     package_data=__pkg_data__,
 
-    entry_points="""
-    [deluge.plugin.core]
-    %s = %s:CorePlugin
-    [deluge.plugin.gtk3ui]
-    %s = %s:Gtk3UIPlugin
-    [deluge.plugin.web]
-    %s = %s:WebUIPlugin
-    """ % ((__plugin_name__, __plugin_name__.lower()) * 3)
+    entry_points="""[deluge.plugin.core]
+%s = %s:CorePlugin
+[deluge.plugin.gtk3ui]
+%s = %s:Gtk3UIPlugin
+[deluge.plugin.web]
+%s = %s:WebUIPlugin
+""" % ((__plugin_name__, __plugin_name__.lower()) * 3)
 )
