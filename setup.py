@@ -59,9 +59,9 @@ __pkg_data__ = {__plugin_name__.lower(): ["data/*"]}
 packages = find_packages()
 
 INSTALL_REQUIRES = [
-    'deluge',
-    'urllib3',
-    'python_telegram_bot==12.3.0'
+    'deluge~=2.1.1',
+    'urllib3~=1.26.18',
+    'python-telegram-bot~=13.15'
 ]
 
 setup(

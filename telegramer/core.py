@@ -61,7 +61,7 @@ from deluge.core.rpcserver import export
 from deluge.core.torrentmanager import TorrentManager
 from deluge.plugins.pluginbase import CorePluginBase
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Bot, MAX_MESSAGE_LENGTH
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, BaseFilter, ConversationHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, MessageFilter
 from telegram.utils.request import Request
 
 from .common import is_int
@@ -183,13 +183,13 @@ def format_torrent_info(torrent):
     return None
 
 
-class MagnetFilter(BaseFilter):
+class MagnetFilter(MessageFilter):
     def filter(self, message):
         text = message.text
         return text and not text.startswith('/') and is_magnet(text)
 
 
-class UrlFilter(BaseFilter):
+class UrlFilter(MessageFilter):
     def filter(self, message):
         text = message.text
         return text and not text.startswith('/') and is_url(text)
