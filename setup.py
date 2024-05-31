@@ -60,7 +60,6 @@ packages = find_packages()
 
 INSTALL_REQUIRES = [
     'deluge~=2.1.1',
-    'urllib3~=1.26.18',
     'python-telegram-bot~=13.15'
 ]
 

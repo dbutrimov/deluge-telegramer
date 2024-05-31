@@ -51,7 +51,6 @@ import os
 import random
 import uuid
 
-import urllib3
 from deluge import component
 from deluge.common import fsize, fpcnt, fspeed, fpeer, ftime, fdate, is_url, is_magnet
 from deluge.configmanager import ConfigManager
@@ -67,7 +66,7 @@ from telegram.utils.request import Request
 from .common import is_int
 
 log = logging.getLogger(__name__)
-http = urllib3.PoolManager()
+requests = Request(con_pool_size=8)
 
 HELP_MESSAGE = \
     '/add - Add a new torrent\n' \
@@ -95,11 +94,6 @@ DEFAULT_PREFS = {
 PREFS_TO_RESTART = [
     'telegram_token'
 ]
-
-HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
-                  '(KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
-}
 
 STICKERS = {
     'lincoln': 'BQADBAADGQADyIsGAAE2WnfSWOhfUgI',
@@ -314,7 +308,7 @@ class Core(CorePluginBase):
 
             self._init_users(self._config)
 
-            self._bot = Bot(telegram_token, request=Request(con_pool_size=8))
+            self._bot = Bot(telegram_token, request=requests)
             # Create the EventHandler and pass it bot's token.
             self._updater = Updater(bot=self._bot, use_context=True)
             # Get the dispatcher to register handlers
@@ -567,8 +561,7 @@ class Core(CorePluginBase):
             file_info = context.bot.get_file(document.file_id)
 
             # Download file
-            response = http.request('GET', file_info.file_path, headers=HEADERS)
-            file_content = response.data
+            file_content = requests.retrieve(file_info.file_path)
 
             # Base64 encode file data
             context.user_data['torrent'] = base64.b64encode(file_content)
@@ -590,8 +583,7 @@ class Core(CorePluginBase):
 
         try:
             # Download file
-            response = http.request('GET', url, headers=HEADERS)
-            file_content = response.data
+            file_content = requests.retrieve(url)
 
             # Base64 encode file data
             context.user_data['torrent'] = base64.b64encode(file_content)
