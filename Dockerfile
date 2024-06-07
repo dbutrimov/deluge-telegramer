@@ -9,9 +9,12 @@ COPY telegramer ./telegramer
 COPY setup.py ./setup.py
 COPY requirements.txt ./requirements.txt
 COPY LICENSE ./LICENSE
+COPY build_egg.sh ./build_egg.sh
 
 RUN \
   echo "**** install build packages ****" && \
+  apk add --no-cache --upgrade \
+    bash && \
   apk add --no-cache --upgrade --virtual=build-dependencies \
     py3-pip && \
   echo "**** install packages ****" && \

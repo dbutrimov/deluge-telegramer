@@ -55,12 +55,11 @@ __long_description__ = """
 Send notifications, add and view torrents on Deluge
 using Telegram messenger
 """
-__pkg_data__ = {__plugin_name__.lower(): ["data/*"]}
+__pkg_data__ = {"": ["cacert.pem"], __plugin_name__.lower(): ["data/*"]}
 packages = find_packages()
 
 INSTALL_REQUIRES = [
-    'deluge~=2.1.1',
-    'python-telegram-bot~=13.15'
+    'deluge~=2.1'
 ]
 
 setup(

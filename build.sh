@@ -13,11 +13,6 @@ for PYTHON_VERSION in ${PYTHON_VERSIONS[@]}; do
     --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
     -t ${IMAGE_NAME} .
 
-  docker run -v ${OUTPUT_DIR}:/tmp/out --rm -i ${IMAGE_NAME} sh -s \
-<< COMMANDS
-python setup.py bdist_egg
-chown -R $(id -u):$(id -g) dist
-cp -ar dist/*.egg /tmp/out/
-COMMANDS
+  docker run -v ${OUTPUT_DIR}:/tmp/out --rm -i ${IMAGE_NAME} bash build_egg.sh
 
 done
