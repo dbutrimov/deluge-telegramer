@@ -1,208 +1,390 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.40.0 -->
 <interface>
-  <requires lib="gtk+" version="3.10" />
+  <requires lib="gtk+" version="3.2"/>
+  <object class="GtkListStore" id="categories_store">
+    <columns>
+      <!-- column-name id -->
+      <column type="gchararray"/>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name directory -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkWindow" id="telegramer">
-    <property name="title" translatable="yes">Telegramer</property>
-
+    <property name="can-focus">True</property>
     <child>
       <object class="GtkNotebook" id="prefs_box">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
         <child>
           <object class="GtkBox">
-            <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="margin-left">10</property>
+            <property name="margin-right">10</property>
+            <property name="margin-top">10</property>
+            <property name="margin-bottom">10</property>
+            <property name="orientation">vertical</property>
             <property name="spacing">5</property>
-            <property name="margin_top">10</property>
-            <property name="margin_bottom">10</property>
-            <property name="margin_left">10</property>
-            <property name="margin_right">10</property>
-
             <child>
               <object class="GtkLabel">
-                <property name="label" translatable="yes">Telegram Bot Token:</property>
-                <property name="xalign">0</property>
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
+                <property name="margin-top">5</property>
+                <property name="margin-bottom">5</property>
+                <property name="label" translatable="yes">&lt;b&gt;Bot Settings&lt;/b&gt;</property>
+                <property name="use-markup">True</property>
               </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
+                <property name="label" translatable="yes">Telegram Bot Token:</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
             </child>
             <child>
               <object class="GtkEntry" id="telegram_token">
-                <property name="placeholder_text" translatable="yes">Contact @BotFather and create a new bot</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="placeholder-text" translatable="yes">Contact @BotFather and create a new bot</property>
               </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
             </child>
             <child>
               <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Telegram User ID:</property>
-                <property name="xalign">0</property>
               </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">3</property>
+              </packing>
             </child>
             <child>
               <object class="GtkEntry" id="telegram_user">
-                <property name="placeholder_text" translatable="yes">Contact @MyIDbot</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="placeholder-text" translatable="yes">Contact @MyIDbot</property>
               </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">4</property>
+              </packing>
             </child>
             <child>
               <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Additional IDs:</property>
-                <property name="xalign">0</property>
               </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">5</property>
+              </packing>
             </child>
             <child>
               <object class="GtkEntry" id="telegram_users">
-                <property name="placeholder_text" translatable="yes">IDs should be comma-separated</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="placeholder-text" translatable="yes">IDs should be comma-separated</property>
               </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">6</property>
+              </packing>
             </child>
             <child>
               <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
                 <property name="label" translatable="yes">Notify IDs:</property>
-                <property name="xalign">0</property>
               </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">7</property>
+              </packing>
             </child>
             <child>
               <object class="GtkEntry" id="telegram_users_notify">
-                <property name="placeholder_text" translatable="yes">IDs should be comma-separated</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="placeholder-text" translatable="yes">IDs should be comma-separated</property>
               </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">8</property>
+              </packing>
             </child>
-
             <child>
               <object class="GtkButtonBox">
-                <property name="homogeneous">True</property>
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-top">10</property>
+                <property name="margin-bottom">10</property>
                 <property name="spacing">5</property>
-                <property name="margin_top">10</property>
-                <property name="margin_bottom">10</property>
-                <property name="layout_style">start</property>
-
-                <child>
-                  <object class="GtkButton" id="button_save">
-                    <property name="label" translatable="yes">Save</property>
-                    <signal name="clicked" handler="on_button_save_clicked" swapped="no" />
-                  </object>
-                </child>
+                <property name="homogeneous">True</property>
+                <property name="layout-style">start</property>
                 <child>
                   <object class="GtkButton" id="button_test">
                     <property name="label" translatable="yes">Test</property>
-                    <signal name="clicked" handler="on_button_test_clicked" swapped="no" />
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="receives-default">False</property>
+                    <signal name="clicked" handler="on_button_test_clicked" swapped="no"/>
                   </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
                 </child>
                 <child>
                   <object class="GtkButton" id="button_reload">
                     <property name="label" translatable="yes">Reload</property>
-                    <signal name="clicked" handler="on_button_reload_clicked" swapped="no" />
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="receives-default">False</property>
+                    <signal name="clicked" handler="on_button_reload_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">9</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">start</property>
+                <property name="margin-top">5</property>
+                <property name="margin-bottom">5</property>
+                <property name="label" translatable="yes">&lt;b&gt;Notifications&lt;/b&gt;</property>
+                <property name="use-markup">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">10</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="telegram_notify_added">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="draw-indicator">True</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">Send Telegram notification when torrents are added</property>
                   </object>
                 </child>
               </object>
-            </child>
-          </object>
-        </child>
-        <child type="tab">
-          <object class="GtkLabel">
-            <property name="label" translatable="yes">Bot Settings</property>
-          </object>
-        </child>
-
-        <child>
-          <object class="GtkBox">
-            <property name="orientation">GTK_ORIENTATION_VERTICAL</property>
-            <property name="spacing">5</property>
-            <property name="margin_top">10</property>
-            <property name="margin_bottom">10</property>
-            <property name="margin_left">10</property>
-            <property name="margin_right">10</property>
-
-            <child>
-              <object class="GtkCheckButton" id="telegram_notify_added">
-                <property name="label" translatable="yes">Send Telegram notification when torrents are added</property>
-                <property name="draw_indicator">True</property>
-              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">11</property>
+              </packing>
             </child>
             <child>
               <object class="GtkCheckButton" id="telegram_notify_finished">
-                <property name="label" translatable="yes">Send Telegram notification when torrents finish</property>
-                <property name="draw_indicator">True</property>
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="receives-default">False</property>
+                <property name="draw-indicator">True</property>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="halign">start</property>
+                    <property name="label" translatable="yes">Send Telegram notification when torrents finish</property>
+                  </object>
+                </child>
               </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">12</property>
+              </packing>
             </child>
           </object>
         </child>
         <child type="tab">
           <object class="GtkLabel">
-            <property name="label" translatable="yes">Notifications</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">General</property>
           </object>
+          <packing>
+            <property name="tab-fill">False</property>
+          </packing>
         </child>
-
         <child>
-          <object class="GtkGrid">
-            <property name="row_spacing">5</property>
-            <property name="column_spacing">5</property>
-            <property name="margin_top">10</property>
-            <property name="margin_bottom">10</property>
-            <property name="margin_left">10</property>
-            <property name="margin_right">10</property>
-            <property name="column_homogeneous">True</property>
-
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="orientation">vertical</property>
             <child>
-              <object class="GtkLabel">
-                <property name="label" translatable="yes">Category</property>
-                <property name="xalign">0</property>
+              <object class="GtkTreeView">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="model">categories_store</property>
+                <property name="headers-clickable">False</property>
+                <property name="enable-search">False</property>
+                <child internal-child="selection">
+                  <object class="GtkTreeSelection" id="categories_selection">
+                    <signal name="changed" handler="on_categories_selection_changed" swapped="no"/>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn">
+                    <property name="title" translatable="yes">Name</property>
+                    <property name="expand">True</property>
+                    <child>
+                      <object class="GtkCellRendererText"/>
+                      <attributes>
+                        <attribute name="text">1</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn">
+                    <property name="title" translatable="yes">Directory</property>
+                    <property name="expand">True</property>
+                    <child>
+                      <object class="GtkCellRendererText"/>
+                      <attributes>
+                        <attribute name="text">2</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
               </object>
               <packing>
-                <property name="left_attach">0</property>
-                <property name="top_attach">0</property>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
               </packing>
             </child>
             <child>
-              <object class="GtkLabel">
-                <property name="label" translatable="yes">Directory</property>
-                <property name="xalign">0</property>
+              <object class="GtkToolbar">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <child>
+                  <object class="GtkToolButton" id="add_category">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label" translatable="yes">Add</property>
+                    <property name="use-underline">True</property>
+                    <property name="icon-name">document-new-symbolic</property>
+                    <signal name="clicked" handler="on_add_category_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="homogeneous">True</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkToolButton" id="edit_category">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label" translatable="yes">Edit</property>
+                    <property name="use-underline">True</property>
+                    <property name="icon-name">document-edit-symbolic</property>
+                    <signal name="clicked" handler="on_edit_category_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="homogeneous">True</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkSeparatorToolItem">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="draw">False</property>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="homogeneous">True</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkToolButton" id="delete_category">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label" translatable="yes">Delete</property>
+                    <property name="use-underline">True</property>
+                    <property name="icon-name">edit-delete-symbolic</property>
+                    <signal name="clicked" handler="on_delete_category_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="homogeneous">True</property>
+                  </packing>
+                </child>
               </object>
               <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="cat1" />
-              <packing>
-                <property name="left_attach">0</property>
-                <property name="top_attach">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="dir1" />
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="cat2" />
-              <packing>
-                <property name="left_attach">0</property>
-                <property name="top_attach">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="dir2" />
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="cat3" />
-              <packing>
-                <property name="left_attach">0</property>
-                <property name="top_attach">3</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="dir3" />
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">3</property>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
         </child>
         <child type="tab">
           <object class="GtkLabel">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
             <property name="label" translatable="yes">Sorting</property>
           </object>
+          <packing>
+            <property name="position">1</property>
+            <property name="tab-fill">False</property>
+          </packing>
         </child>
       </object>
     </child>

@@ -43,78 +43,241 @@ from __future__ import unicode_literals
 
 import logging
 
+import gi  # isort:skip (Required before Gtk import).
+
+gi.require_version('Gtk', '3.0')  # NOQA: E402
+
+# isort:imports-thirdparty
 from gi.repository import Gtk
-from .common import get_resource
-from deluge.ui.client import client
+
+# isort:imports-firstparty
 import deluge.component as component
 from deluge.plugins.pluginbase import Gtk3PluginBase
+from deluge.ui.client import client
+
+# isort:imports-localfolder
+from .common import get_resource
 
 log = logging.getLogger(__name__)
 
 
-class Gtk3UI(Gtk3PluginBase):
-    def __init__(self, plugin_name):
-        super().__init__(plugin_name)
+class CategoryDialog(object):
+    def __init__(self):
+        self.name_entry = None
+        self.directory_entry = None
+        self.add_button = None
+        self.apply_button = None
+        self.dialog = None
+
+    def show(self, name=None, directory=None, id_=None):
+        builder = Gtk.Builder()
+        builder.add_from_file(get_resource("category_dialog.ui"))
+
+        dialog = builder.get_object('category_dialog')
+        dialog.set_transient_for(component.get('Preferences').pref_dialog)
+
+        name_entry = builder.get_object('name_entry')
+        directory_entry = builder.get_object('directory_entry')
+        add_button = builder.get_object('add_button')
+        apply_button = builder.get_object('apply_button')
+
+        name_entry.set_text(name or '')
+        directory_entry.set_text(directory or '')
+
+        if id_:
+            dialog.set_title('Edit category')
+            add_button.hide()
+            apply_button.show()
+        else:
+            dialog.set_title('Add category')
+            add_button.show()
+            apply_button.hide()
+
+        is_valid = name_entry.get_text() and directory_entry.get_text()
+        add_button.set_sensitive(is_valid)
+        apply_button.set_sensitive(is_valid)
+
+        self.name_entry = name_entry
+        self.directory_entry = directory_entry
+        self.add_button = add_button
+        self.apply_button = apply_button
+        self.dialog = dialog
+
+        builder.connect_signals(self)
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            name = name_entry.get_text()
+            directory = directory_entry.get_text()
+            result = name, directory, id_
+        else:
+            result = None
+
+        dialog.destroy()
+
+        self.name_entry = None
+        self.directory_entry = None
+        self.add_button = None
+        self.apply_button = None
+        self.dialog = None
+
+        return result
+
+    def on_entry_changed(self, editable, user_data=None):
+        is_valid = self.name_entry.get_text() and self.directory_entry.get_text()
+        self.add_button.set_sensitive(is_valid)
+        self.apply_button.set_sensitive(is_valid)
+
+    def on_cancel_button_clicked(self, event=None):
+        self.dialog.response(Gtk.ResponseType.CANCEL)
+
+    def on_add_button_clicked(self, event=None):
+        self.dialog.response(Gtk.ResponseType.OK)
+
+    def on_apply_button_clicked(self, event=None):
+        self.dialog.response(Gtk.ResponseType.OK)
+
+
+class TelegramerPreferences(object):
+    def __init__(self, plugin):
+        self.plugin = plugin
+
         self.builder = None
 
-    def enable(self):
-        self.builder = Gtk.Builder.new_from_file(get_resource("config.ui"))
+        self.telegram_token = None
+        self.telegram_user = None
+        self.telegram_users = None
+        self.telegram_users_notify = None
+        self.telegram_notify_added = None
+        self.telegram_notify_finished = None
 
-        self.builder.connect_signals({
-            "on_button_test_clicked": self.on_button_test_clicked,
-            "on_button_save_clicked": self.on_button_save_clicked,
-            "on_button_reload_clicked": self.on_button_reload_clicked
-        })
-        component.get("Preferences").add_page("Telegramer", self.builder.get_object("prefs_box"))
-        component.get("PluginManager").register_hook("on_apply_prefs", self.on_apply_prefs)
-        component.get("PluginManager").register_hook("on_show_prefs", self.on_show_prefs)
+        self.categories_store = None
+        self.categories_selection = None
+        self.edit_category_button = None
+        self.delete_category_button = None
 
-    def disable(self):
-        component.get("Preferences").remove_page("Telegramer")
-        component.get("PluginManager").deregister_hook("on_apply_prefs", self.on_apply_prefs)
-        component.get("PluginManager").deregister_hook("on_show_prefs", self.on_show_prefs)
+    def load(self):
+        self.builder = Gtk.Builder()
+        self.builder.add_from_file(get_resource("config.ui"))
+
+        self.plugin.add_preferences_page("Telegramer", self.builder.get_object("prefs_box"))
+
+        self.telegram_notify_added = self.builder.get_object("telegram_notify_added")
+        self.telegram_notify_finished = self.builder.get_object("telegram_notify_finished")
+        self.telegram_token = self.builder.get_object("telegram_token")
+        self.telegram_user = self.builder.get_object("telegram_user")
+        self.telegram_users = self.builder.get_object("telegram_users")
+        self.telegram_users_notify = self.builder.get_object("telegram_users_notify")
+
+        self.categories_store = self.builder.get_object("categories_store")
+        self.categories_selection = self.builder.get_object("categories_selection")
+        self.edit_category_button = self.builder.get_object("edit_category")
+        self.delete_category_button = self.builder.get_object("delete_category")
+
+        store, iter = self.categories_selection.get_selected()
+        has_selection = iter is not None
+        self.edit_category_button.set_sensitive(has_selection)
+        self.delete_category_button.set_sensitive(has_selection)
+
+        self.plugin.register_hook("on_apply_prefs", self.on_apply_prefs)
+        self.plugin.register_hook("on_show_prefs", self.on_show_prefs)
+
+        self.builder.connect_signals(self)
+
+    def unload(self):
+        self.plugin.remove_preferences_page("Telegramer")
+        self.plugin.deregister_hook("on_apply_prefs", self.on_apply_prefs)
+        self.plugin.deregister_hook("on_show_prefs", self.on_show_prefs)
+
+    def update_categories(self, categories):
+        self.categories_store.clear()
+        if not categories:
+            return
+
+        for category in categories:
+            self.categories_store.append([category['id'], category['name'], category['directory']])
+
+    def update_config(self, config):
+        self.telegram_token.set_text(config["telegram_token"])
+        self.telegram_user.set_text(config["telegram_user"])
+        self.telegram_users.set_text(config["telegram_users"])
+        self.telegram_users_notify.set_text(config["telegram_users_notify"])
+        self.telegram_notify_added.set_active(config["telegram_notify_added"])
+        self.telegram_notify_finished.set_active(config["telegram_notify_finished"])
+
+        self.update_categories(config["categories"])
 
     def on_apply_prefs(self):
         log.debug("Telegramer: applying prefs for Telegramer")
         config = {
-            "telegram_notify_added": self.builder.get_object("telegram_notify_added").get_active(),
-            "telegram_notify_finished": self.builder.get_object("telegram_notify_finished").get_active(),
-            "telegram_token": self.builder.get_object("telegram_token").get_text(),
-            "telegram_user": self.builder.get_object("telegram_user").get_text(),
-            "telegram_users": self.builder.get_object("telegram_users").get_text(),
-            "telegram_users_notify": self.builder.get_object("telegram_users_notify").get_text(),
-            "cat1": self.builder.get_object("cat1").get_text(),
-            "dir1": self.builder.get_object("dir1").get_text(),
-            "cat2": self.builder.get_object("cat2").get_text(),
-            "dir2": self.builder.get_object("dir2").get_text(),
-            "cat3": self.builder.get_object("cat3").get_text(),
-            "dir3": self.builder.get_object("dir3").get_text()
+            "telegram_token": self.telegram_token.get_text(),
+            "telegram_user": self.telegram_user.get_text(),
+            "telegram_users": self.telegram_users.get_text(),
+            "telegram_users_notify": self.telegram_users_notify.get_text(),
+            "telegram_notify_added": self.telegram_notify_added.get_active(),
+            "telegram_notify_finished": self.telegram_notify_finished.get_active()
         }
         client.telegramer.set_config(config)
 
     def on_show_prefs(self):
-        client.telegramer.get_config().addCallback(self.cb_get_config)
-
-    def cb_get_config(self, config):
-        "callback for on show_prefs"
-        self.builder.get_object("telegram_notify_added").set_active(config["telegram_notify_added"])
-        self.builder.get_object("telegram_notify_finished").set_active(config["telegram_notify_finished"])
-        self.builder.get_object("telegram_token").set_text(config["telegram_token"])
-        self.builder.get_object("telegram_user").set_text(config["telegram_user"])
-        self.builder.get_object("telegram_users").set_text(config["telegram_users"])
-        self.builder.get_object("telegram_users_notify").set_text(config["telegram_users_notify"])
-        self.builder.get_object("cat1").set_text(config["cat1"])
-        self.builder.get_object("dir1").set_text(config["dir1"])
-        self.builder.get_object("cat2").set_text(config["cat2"])
-        self.builder.get_object("dir2").set_text(config["dir2"])
-        self.builder.get_object("cat3").set_text(config["cat3"])
-        self.builder.get_object("dir3").set_text(config["dir3"])
+        client.telegramer.get_config().addCallback(self.update_config)
 
     def on_button_test_clicked(self, event=None):
         client.telegramer.send_test_message()
 
-    def on_button_save_clicked(self, event=None):
-        self.on_apply_prefs()
-
     def on_button_reload_clicked(self, event=None):
         client.telegramer.restart()
+
+    def on_add_category_clicked(self, event=None):
+        dialog = CategoryDialog()
+        result = dialog.show()
+        if not result:
+            return
+
+        name, directory, _ = result
+        client.telegramer.add_category(name, directory)
+        client.telegramer.get_categories().addCallback(self.update_categories)
+
+    def on_edit_category_clicked(self, event=None):
+        store, iter = self.categories_selection.get_selected()
+        if not iter:
+            return
+
+        item = store[iter]
+        id_ = item[0]
+        name = item[1]
+        directory = item[2]
+
+        dialog = CategoryDialog()
+        result = dialog.show(name, directory, id_)
+        if not result:
+            return
+
+        name, directory, id_ = result
+        client.telegramer.update_category(id_, name, directory)
+        client.telegramer.get_categories().addCallback(self.update_categories)
+
+    def on_delete_category_clicked(self, event=None):
+        store, iter = self.categories_selection.get_selected()
+        if not iter:
+            return
+
+        category_id = store[iter][0]
+        client.telegramer.remove_category(category_id)
+        client.telegramer.get_categories().addCallback(self.update_categories)
+
+    def on_categories_selection_changed(self, event=None):
+        store, iter = self.categories_selection.get_selected()
+        has_selection = iter is not None
+        self.edit_category_button.set_sensitive(has_selection)
+        self.delete_category_button.set_sensitive(has_selection)
+
+
+class Gtk3UI(Gtk3PluginBase):
+    def enable(self):
+        self.plugin = component.get('PluginManager')
+        self.preferences = TelegramerPreferences(self.plugin)
+        self.preferences.load()
+
+    def disable(self):
+        self.preferences.unload()
