@@ -50,7 +50,10 @@ log = logging.getLogger(__name__)
 
 
 class WebUI(WebPluginBase):
-    scripts = [get_resource("telegramer.js")]
+    scripts = [
+        get_resource("category_dialog.js"),
+        get_resource("telegramer.js"),
+    ]
 
     def enable(self):
         pass

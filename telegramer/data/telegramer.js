@@ -37,104 +37,6 @@ Copyright:
     statement from all source files in the program, then also delete it here.
 */
 
-CategoryWindowBase = Ext.extend(Ext.Window, {
-    layout: 'fit',
-    width: 400,
-    height: 130,
-    closeAction: 'hide',
-
-    initComponent: function () {
-        CategoryWindowBase.superclass.initComponent.call(this);
-
-        this.addButton(_('Cancel'), this.onCancelClick, this);
-        this.form = this.add({
-            xtype: 'form',
-            baseCls: 'x-plain',
-            bodyStyle: 'padding: 5px',
-            items: [
-                {
-                    xtype: 'textfield',
-                    fieldLabel: _('Name'),
-                    name: 'name',
-                    width: 270,
-                },
-                {
-                    xtype: 'textfield',
-                    fieldLabel: _('Directory'),
-                    name: 'directory',
-                    width: 270,
-                },
-            ],
-        });
-    },
-
-    onCancelClick: function () {
-        this.hide();
-    },
-});
-
-AddCategoryWindow = Ext.extend(CategoryWindowBase, {
-    title: _('Add Category'),
-
-    initComponent: function () {
-        AddCategoryWindow.superclass.initComponent.call(this);
-
-        this.addButton(_('Add'), this.onAddClick, this);
-        this.addEvents('add');
-    },
-
-    show: function () {
-        AddCategoryWindow.superclass.show.call(this);
-
-        this.form.getForm().setValues({
-            name: '',
-            directory: '',
-        });
-    },
-
-    onAddClick: function () {
-        let values = this.form.getForm().getFieldValues();
-        this.fireEvent(
-            'add',
-            this,
-            values.name,
-            values.directory
-        );
-    },
-});
-
-EditCategoryWindow = Ext.extend(CategoryWindowBase, {
-    title: _('Edit Category'),
-
-    initComponent: function () {
-        EditCategoryWindow.superclass.initComponent.call(this);
-
-        this.addButton(_('Save'), this.onSaveClick, this);
-        this.addEvents('save');
-    },
-
-    show: function (id, name, directory) {
-        EditCategoryWindow.superclass.show.call(this);
-
-        this.id = id;
-        this.form.getForm().setValues({
-            name: name,
-            directory: directory,
-        });
-    },
-
-    onSaveClick: function () {
-        let values = this.form.getForm().getFieldValues();
-        this.fireEvent(
-            'save',
-            this,
-            this.id,
-            values.name,
-            values.directory
-        );
-    },
-});
-
 TelegramerPage = Ext.extend(Ext.TabPanel, {
     title: _('Telegramer'),
     header: false,
@@ -300,52 +202,46 @@ TelegramerPage = Ext.extend(Ext.TabPanel, {
             scope: this,
         });
     },
-    onAddCategoryClick: function () {
-        if (!this.addCategoryWindow) {
-            this.addCategoryWindow = new AddCategoryWindow();
-            this.addCategoryWindow.on(
-                'add',
-                function (window, name, directory) {
-                    deluge.client.telegramer.add_category(
-                        name,
-                        directory,
-                        {
-                            success: function () {
-                                window.hide();
-                                this.updateCategories();
-                            },
-                            scope: this,
-                        });
-                },
-                this
-            );
+    applyCategory: function (dialog, name, directory, id) {
+        if (id) {
+            deluge.client.telegramer.update_category(
+                id,
+                name,
+                directory,
+                {
+                    success: function () {
+                        dialog.hide();
+                        this.updateCategories();
+                    },
+                    scope: this,
+                });
+        } else {
+            deluge.client.telegramer.add_category(
+                name,
+                directory,
+                {
+                    success: function () {
+                        dialog.hide();
+                        this.updateCategories();
+                    },
+                    scope: this,
+                });
         }
-        this.addCategoryWindow.show();
     },
-    onEditCategoryClick: function () {
-        if (!this.editCategoryWindow) {
-            this.editCategoryWindow = new EditCategoryWindow();
-            this.editCategoryWindow.on(
-                'save',
-                function (window, id, name, directory) {
-                    deluge.client.telegramer.update_category(
-                        id,
-                        name,
-                        directory,
-                        {
-                            success: function () {
-                                window.hide();
-                                this.updateCategories();
-                            },
-                            scope: this,
-                        });
-                },
-                this
-            );
+    showCategoryDialog: function(name = '', directory = '', id = '') {
+        if (!this.categoryDialog) {
+            this.categoryDialog = new CategoryDialog();
+            this.categoryDialog.on('apply', this.applyCategory, this);
         }
 
+        this.categoryDialog.show(name, directory, id);
+    },
+    onAddCategoryClick: function () {
+        this.showCategoryDialog();
+    },
+    onEditCategoryClick: function () {
         let category = this.categoriesListView.getSelectedRecords()[0];
-        this.editCategoryWindow.show(category.get('id'), category.get('name'), category.get('directory'));
+        this.showCategoryDialog(category.get('name'), category.get('directory'), category.get('id'));
     },
     onRemoveCategoryClick: function () {
         let category = this.categoriesListView.getSelectedRecords()[0];
